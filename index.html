@@ -1121,11 +1121,12 @@
             if (file) {
                 document.getElementById('examFileUploadStatus').classList.remove('hidden');
                 document.getElementById('examFileNameDisplay').textContent = file.name;
-                showToast(`បានជ្រើសរើសឯកសារ៖ ${file.name}`, 'success');
+                // Auto-process immediately so user doesn't need to click twice
+                processExamExcelFile();
             }
         }
 
-        function processExamExcelFile() {
+        async function processExamExcelFile() {
             const fileInput = document.getElementById('examExcelFile');
             const file = fileInput.files[0];
             
@@ -1134,72 +1135,130 @@
                 return;
             }
 
-            showToast('កំពុងទាញទិន្នន័យបេក្ខជនពី Excel បញ្ចូលប្រព័ន្ធ...', 'info');
+            showToast('កំពុងអាន និងនាំចូលទិន្នន័យពី Excel...', 'info');
             
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, {type: 'array'});
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ''});
                     
-                    // Clear existing mock data if any, or just overwrite it
-                    let importedCandidates = [];
-                    
-                    // Skip header row (index 0)
-                    for (let i = 1; i < json.length; i++) {
-                        const row = json[i];
-                        if (!row || row.length === 0 || !row[0]) continue;
-                        
-                        // Mapping based on actual user Excel: No(0), Name(1), Gender(2), Grade(3), School(4), Subject(5)
-                        let paddedSeat = ('00' + (importedCandidates.length + 1)).slice(-3);
-                        let student = {
-                            seat: paddedSeat,
-                            name: String(row[1] || '---').trim(),
-                            gender: String(row[2] || '---').trim(),
-                            grade: String(row[3] || '---').trim(),
-                            school: String(row[4] || '---').trim(),
-                            subject: String(row[5] || 'ទូទៅ').trim(),
-                            room: 'ថ្មី'
-                        };
-                        
-                        // Fix for gender parsing: handle 'ប'/'ប្រុស' and 'ស'/'ស្រី' or 'M'/'F'
-                        let g = student.gender.charAt(0).toUpperCase();
-                        if (g === 'ប' || g === 'M') student.gender = 'M';
-                        else if (g === 'ស' || g === 'F') student.gender = 'F';
-                        
-                        importedCandidates.push(student);
-                    }
-                    
-                    if (importedCandidates.length > 0) {
-                        pushHistoryState('នាំចូល Excel');
-                        mockCandidates = importedCandidates;
+                    if (!json || json.length < 2) {
+                        showToast('ឯកសារ Excel មិនមានទិន្នន័យគ្រប់គ្រាន់ទេ!', 'error');
+                        return;
                     }
 
-                    showToast('ទិន្នន័យបេក្ខជនប្រឡងត្រូវបាននាំចូលដោយជោគជ័យ!', 'success');
-                    document.getElementById('examFileUploadStatus').classList.add('hidden');
-                    fileInput.value = ''; 
+                    // 1. Detect column headers dynamically
+                    let headerRowIndex = 0;
+                    let nameCol = -1, genderCol = -1, gradeCol = -1, schoolCol = -1, subjectCol = -1, seatCol = -1, roomCol = -1;
+
+                    for (let r = 0; r < Math.min(5, json.length); r++) {
+                        const row = json[r];
+                        for (let c = 0; c < row.length; c++) {
+                            const val = String(row[c] || '').toLowerCase().trim();
+                            if (!val) continue;
+                            if (val.includes('ឈ្មោះ') || val.includes('នាម') || val.includes('name') || val.includes('student')) {
+                                nameCol = c;
+                                headerRowIndex = r;
+                            } else if (val.includes('ភេទ') || val.includes('gender') || val.includes('sex')) {
+                                genderCol = c;
+                            } else if (val.includes('ថ្នាក់') || val.includes('grade') || val.includes('class')) {
+                                gradeCol = c;
+                            } else if (val.includes('សាខា') || val.includes('សាលា') || val.includes('school') || val.includes('branch')) {
+                                schoolCol = c;
+                            } else if (val.includes('ឯកទេស') || val.includes('មុខវិជ្ជា') || val.includes('វិជ្ជា') || val.includes('subject') || val.includes('major')) {
+                                subjectCol = c;
+                            } else if (val.includes('លេខតុ') || val.includes('តុ') || val.includes('seat') || val.includes('ល.រ') || val.includes('no')) {
+                                seatCol = c;
+                            } else if (val.includes('បន្ទប់') || val.includes('room')) {
+                                roomCol = c;
+                            }
+                        }
+                        if (nameCol !== -1) break;
+                    }
+
+                    // Fallbacks if headers weren't named with keywords
+                    if (nameCol === -1) nameCol = 1;
+                    if (gradeCol === -1 && json[0].length >= 3) gradeCol = 2;
+                    if (schoolCol === -1 && json[0].length >= 4) schoolCol = 3;
+                    if (subjectCol === -1 && json[0].length >= 5) subjectCol = 4;
+
+                    let importedCandidates = [];
                     
+                    for (let i = headerRowIndex + 1; i < json.length; i++) {
+                        const row = json[i];
+                        if (!row || row.length === 0) continue;
+                        
+                        let nameVal = nameCol !== -1 ? String(row[nameCol] || '').trim() : '';
+                        if (!nameVal || nameVal === '---' || nameVal.includes('សរុប') || nameVal.includes('Total') || nameVal.includes('គោត្តនាម')) continue;
+
+                        let genderVal = genderCol !== -1 ? String(row[genderCol] || '').trim() : '';
+                        let gUpper = genderVal ? genderVal.charAt(0).toUpperCase() : '';
+                        let gender = (gUpper === 'ស' || gUpper === 'F' || genderVal.includes('ស្រី')) ? 'F' : 'M';
+
+                        let gradeVal = gradeCol !== -1 ? String(row[gradeCol] || '១២').trim() : '១២';
+                        let gradeNum = extractGradeNumber(gradeVal);
+                        let gradeStr = gradeNum > 0 ? toKhmerNum(gradeNum) : gradeVal;
+
+                        let schoolVal = schoolCol !== -1 ? String(row[schoolCol] || '').trim() : '';
+                        let subjectVal = subjectCol !== -1 ? String(row[subjectCol] || 'អក្សរសាស្រ្តខ្មែរ').trim() : 'អក្សរសាស្រ្តខ្មែរ';
+                        let roomVal = roomCol !== -1 ? String(row[roomCol] || 'ថ្មី').trim() : 'ថ្មី';
+
+                        let seatVal = '';
+                        if (seatCol !== -1 && row[seatCol]) {
+                            seatVal = String(row[seatCol]).trim();
+                            if (!isNaN(parseInt(seatVal))) {
+                                seatVal = ('00' + parseInt(seatVal)).slice(-3);
+                            }
+                        }
+                        if (!seatVal) {
+                            seatVal = ('00' + (importedCandidates.length + 1)).slice(-3);
+                        }
+
+                        importedCandidates.push({
+                            seat: seatVal,
+                            name: nameVal,
+                            gender: gender,
+                            grade: gradeStr,
+                            school: schoolVal,
+                            subject: subjectVal,
+                            room: roomVal
+                        });
+                    }
+
+                    if (importedCandidates.length === 0) {
+                        showToast('មិនអាចទាញទិន្នន័យបេក្ខជនពី Excel នេះបានទេ! សូមពិនិត្យទម្រង់ជួរឈរ។', 'error');
+                        return;
+                    }
+
+                    pushHistoryState('នាំចូល Excel (' + importedCandidates.length + ' នាក់)');
+                    mockCandidates = importedCandidates;
+
                     document.getElementById('examAllEmptyState').classList.add('hidden');
                     document.getElementById('examAllTableContainer').classList.remove('hidden');
                     document.getElementById('deleteAllBtn').classList.remove('hidden');
                     document.getElementById('saveCandidatesBtn').classList.remove('hidden');
+                    document.getElementById('examFileUploadStatus').classList.add('hidden');
+                    fileInput.value = '';
                     
                     renderExamAllTable();
+                    populateDropdowns();
+                    updateDashboard();
+
+                    // CRITICAL: Save immediately to LocalStorage, Local Server, and Supabase Cloud!
+                    saveCandidates(false);
                     
-                    // Save immediately after import
-                    saveCandidates();
-                    
-                    // Auto-generate rooms to save user a click
+                    // Auto-generate rooms to save user time
                     setTimeout(() => {
                         generateRooms();
-                    }, 500);
-                    
+                    }, 400);
+
                 } catch (error) {
                     console.error(error);
-                    showToast('មានបញ្ហាក្នុងការអានឯកសារ Excel! សូមពិនិត្យមើលទម្រង់ឯកសារឡើងវិញ។', 'error');
+                    showToast('មានបញ្ហាក្នុងការអានឯកសារ Excel: ' + error.message, 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -1379,14 +1438,17 @@
 
         function initSupabase() {
             try {
-                const url = localStorage.getItem('supabase_project_url') || (window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.url : '');
-                const key = localStorage.getItem('supabase_anon_key') || (window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.anonKey : '');
+                const url = localStorage.getItem('supabase_project_url') || (window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.url : '') || 'https://dtfoaumajfkxavqbmnix.supabase.co';
+                const key = localStorage.getItem('supabase_anon_key') || (window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.anonKey : '') || 'sb_publishable_vCiBb00kB9va4_7lj9of9A_U8025HO1';
                 if (url && key && window.supabase) {
                     supabaseClient = window.supabase.createClient(url, key);
                     updateCloudStatusUI('connected');
                 } else {
                     supabaseClient = null;
                     updateCloudStatusUI('disconnected');
+                    if (!window.supabase) {
+                        setTimeout(initSupabase, 400);
+                    }
                 }
             } catch (e) {
                 console.error('Supabase init error:', e);
@@ -1466,6 +1528,9 @@
         }
 
         async function fetchFromSupabase(examKey) {
+            if (!supabaseClient) {
+                initSupabase();
+            }
             if (!supabaseClient) return null;
             try {
                 updateCloudStatusUI('syncing');
@@ -1487,7 +1552,10 @@
         }
 
         async function saveToSupabase(examKey, candidates) {
-            if (!supabaseClient) return;
+            if (!supabaseClient) {
+                initSupabase();
+            }
+            if (!supabaseClient) return false;
             try {
                 updateCloudStatusUI('syncing');
                 const { error } = await supabaseClient
@@ -1496,13 +1564,15 @@
                         exam_key: examKey,
                         data: candidates || [],
                         updated_at: new Date().toISOString()
-                    });
+                    }, { onConflict: 'exam_key' });
                 if (error) throw error;
                 updateCloudStatusUI('synced');
-                setTimeout(() => updateCloudStatusUI('connected'), 3000);
+                setTimeout(() => updateCloudStatusUI('connected'), 2500);
+                return true;
             } catch(e) {
                 console.error('Supabase save error:', e);
                 updateCloudStatusUI('connected');
+                return false;
             }
         }
 
@@ -1511,14 +1581,16 @@
         window.saveCloudSettings = saveCloudSettings;
         window.testCloudConnection = testCloudConnection;
 
-        function saveCandidates(silent = false) {
+        async function saveCandidates(silent = false) {
             try {
                 const storageKey = examConfigs[currentExamKey].storageKey;
-                localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(mockCandidates || []));
+                } catch(e) {}
                 updateAutoSaveIndicator();
 
                 // 1. Save to Supabase Cloud Database (zero data loss across devices!)
-                saveToSupabase(storageKey, mockCandidates);
+                const cloudOk = await saveToSupabase(storageKey, mockCandidates);
 
                 // 2. Save permanently to physical disk file via server API
                 try {
@@ -1531,7 +1603,7 @@
                 } catch(e) {}
 
                 if (!silent) {
-                    showToast('ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
+                    showToast(cloudOk ? 'ទិន្នន័យត្រូវបានរក្សាទុកក្នុង Cloud ដោយជោគជ័យ!' : 'ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
                 }
             } catch (e) {
                 console.error(e);
@@ -3014,6 +3086,10 @@
             mockCandidates = []; // CLEAR OLD DATA WHEN SWITCHING!
             const config = examConfigs[currentExamKey];
 
+            if (!supabaseClient) {
+                initSupabase();
+            }
+
             // 0. Try to load from Supabase Cloud first
             let savedData = null;
             try {
@@ -3023,7 +3099,15 @@
                 }
             } catch(e) {}
 
-            // 1. Try to load from Server API (works for http://localhost:8080 and file:///)
+            // 1. Fallback to localStorage
+            if (!savedData) {
+                const localStr = localStorage.getItem(config.storageKey);
+                if (localStr && localStr.trim() && localStr.trim() !== '[]') {
+                    savedData = localStr;
+                }
+            }
+
+            // 2. Fallback to Server API (works for http://localhost:8080 and file:///)
             if (!savedData) {
                 try {
                     const apiBase = window.location.protocol.startsWith('http') ? '' : 'http://localhost:8080';
@@ -3040,14 +3124,6 @@
                         }
                     }
                 } catch(e) {}
-            }
-
-            // 2. Fallback to localStorage if disk data is not present
-            if (!savedData) {
-                const localStr = localStorage.getItem(config.storageKey);
-                if (localStr && localStr.trim() && localStr.trim() !== '[]') {
-                    savedData = localStr;
-                }
             }
 
             // 3. Fallback to embedded permanent dataset in HTML!
