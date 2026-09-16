@@ -1021,6 +1021,28 @@
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 no-print"></div>
 
     <script>
+        // អនុគមន៍ជំនួយបំប្លែងលេខខ្មែរ និងទាញលេខថ្នាក់ (Hoisted Global Functions)
+        const khmerNumbers = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+        function toKhmerNum(num) {
+            if (num === null || num === undefined) return '';
+            return num.toString().split('').map(d => khmerNumbers[parseInt(d)] !== undefined ? khmerNumbers[parseInt(d)] : d).join('');
+        }
+
+        function extractGradeNumber(str) {
+            if (!str) return 0;
+            const digits = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+            let res = '';
+            for (let char of String(str)) {
+                let idx = digits.indexOf(char);
+                if (idx !== -1) {
+                    res += idx;
+                } else if (char >= '0' && char <= '9') {
+                    res += char;
+                }
+            }
+            return parseInt(res) || 0;
+        }
+
         const sidebar = document.getElementById('sidebar');
         const openSidebarBtn = document.getElementById('openSidebar');
         const closeSidebarBtn = document.getElementById('closeSidebar');
@@ -1249,7 +1271,10 @@
                     updateDashboard();
 
                     // CRITICAL: Save immediately to LocalStorage, Local Server, and Supabase Cloud!
-                    saveCandidates(false);
+                    if (window.embeddedExamData) {
+                        window.embeddedExamData[examConfigs[currentExamKey].storageKey] = mockCandidates;
+                    }
+                    await saveCandidates(false);
                     
                     // Auto-generate rooms to save user time
                     setTimeout(() => {
@@ -1440,21 +1465,33 @@
             try {
                 const url = localStorage.getItem('supabase_project_url') || (window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.url : '') || 'https://dtfoaumajfkxavqbmnix.supabase.co';
                 const key = localStorage.getItem('supabase_anon_key') || (window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.anonKey : '') || 'sb_publishable_vCiBb00kB9va4_7lj9of9A_U8025HO1';
-                if (url && key && window.supabase) {
+                if (url && key && window.supabase && typeof window.supabase.createClient === 'function') {
                     supabaseClient = window.supabase.createClient(url, key);
                     updateCloudStatusUI('connected');
+                    return supabaseClient;
                 } else {
                     supabaseClient = null;
                     updateCloudStatusUI('disconnected');
-                    if (!window.supabase) {
-                        setTimeout(initSupabase, 400);
-                    }
+                    return null;
                 }
             } catch (e) {
                 console.error('Supabase init error:', e);
                 supabaseClient = null;
                 updateCloudStatusUI('error');
+                return null;
             }
+        }
+
+        async function ensureSupabaseReady() {
+            if (supabaseClient) return supabaseClient;
+            for (let i = 0; i < 30; i++) {
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    initSupabase();
+                    if (supabaseClient) return supabaseClient;
+                }
+                await new Promise(r => setTimeout(r, 100));
+            }
+            return initSupabase();
         }
 
         function updateCloudStatusUI(status) {
@@ -1528,9 +1565,7 @@
         }
 
         async function fetchFromSupabase(examKey) {
-            if (!supabaseClient) {
-                initSupabase();
-            }
+            await ensureSupabaseReady();
             if (!supabaseClient) return null;
             try {
                 updateCloudStatusUI('syncing');
@@ -1552,17 +1587,16 @@
         }
 
         async function saveToSupabase(examKey, candidates) {
-            if (!supabaseClient) {
-                initSupabase();
-            }
+            await ensureSupabaseReady();
             if (!supabaseClient) return false;
             try {
                 updateCloudStatusUI('syncing');
+                const cleanPayload = JSON.parse(JSON.stringify(candidates || []));
                 const { error } = await supabaseClient
                     .from('exam_candidates')
                     .upsert({
                         exam_key: examKey,
-                        data: candidates || [],
+                        data: cleanPayload,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'exam_key' });
                 if (error) throw error;
@@ -1576,40 +1610,53 @@
             }
         }
 
-        window.openCloudSettingsModal = openCloudSettingsModal;
-        window.closeCloudSettingsModal = closeCloudSettingsModal;
-        window.saveCloudSettings = saveCloudSettings;
-        window.testCloudConnection = testCloudConnection;
-
         async function saveCandidates(silent = false) {
             try {
                 const storageKey = examConfigs[currentExamKey].storageKey;
+                const cleanData = JSON.parse(JSON.stringify(mockCandidates || []));
+
+                // 1. Instant synchronous save to localStorage
                 try {
-                    localStorage.setItem(storageKey, JSON.stringify(mockCandidates || []));
-                } catch(e) {}
+                    localStorage.setItem(storageKey, JSON.stringify(cleanData));
+                } catch(e) {
+                    console.error('localStorage save error:', e);
+                }
                 updateAutoSaveIndicator();
 
-                // 1. Save to Supabase Cloud Database (zero data loss across devices!)
-                const cloudOk = await saveToSupabase(storageKey, mockCandidates);
+                // 2. Keep in-memory cache updated
+                if (window.embeddedExamData) {
+                    window.embeddedExamData[storageKey] = cleanData;
+                }
 
-                // 2. Save permanently to physical disk file via server API
+                // 3. Save to Supabase Cloud Database (zero data loss across devices!)
+                const cloudOk = await saveToSupabase(storageKey, cleanData);
+
+                // 4. Save permanently to physical disk file via server API (if local dev server is running)
                 try {
                     const apiBase = window.location.protocol.startsWith('http') ? '' : 'http://localhost:8080';
                     fetch(apiBase + '/api/data?key=' + encodeURIComponent(storageKey), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json; charset=utf-8' },
-                        body: JSON.stringify(mockCandidates || [])
+                        body: JSON.stringify(cleanData)
                     }).catch(() => {});
                 } catch(e) {}
 
                 if (!silent) {
                     showToast(cloudOk ? 'ទិន្នន័យត្រូវបានរក្សាទុកក្នុង Cloud ដោយជោគជ័យ!' : 'ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
                 }
+                return true;
             } catch (e) {
                 console.error(e);
-                showToast('មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!', 'error');
+                if (!silent) showToast('មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!', 'error');
+                return false;
             }
         }
+
+        window.openCloudSettingsModal = openCloudSettingsModal;
+        window.closeCloudSettingsModal = closeCloudSettingsModal;
+        window.saveCloudSettings = saveCloudSettings;
+        window.testCloudConnection = testCloudConnection;
+        window.saveCandidates = saveCandidates;
 
         // ==================== EXPORT / IMPORT DATABASE BACKUP ====================
         function exportDatabaseBackup() {
@@ -1971,10 +2018,6 @@
             { room: "២", seat: "០១២", name: "ម៉ន តារា", grade: "១២", school: "វិ. បាក់ទូក", subject: "រូបវិទ្យា", gender: "M" }
         ];
 
-        // អនុគមន៍បំប្លែងលេខទៅជាលេខខ្មែរ
-        const khmerNumbers = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
-        const toKhmerNum = (num) => num.toString().split('').map(d => khmerNumbers[parseInt(d)] || d).join('');
-
         function renderTableForRoom(roomNumber) {
             const tbody = document.getElementById('roomTableBody');
             const filtered = mockCandidates.filter(c => c.room === roomNumber);
@@ -2010,21 +2053,6 @@
             document.getElementById('totalStudentsText').textContent = toKhmerNum(filtered.length);
             document.getElementById('femaleStudentsText').textContent = toKhmerNum(females);
         }
-
-        // មុខងារទាញយកតែតួលេខចេញពីអក្សរ (ឧទាហរណ៍: "ទី ៧" -> 7)
-        const extractGradeNumber = (str) => {
-            const digits = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
-            let res = '';
-            for(let char of String(str)) {
-                let idx = digits.indexOf(char);
-                if (idx !== -1) {
-                    res += idx;
-                } else if (char >= '0' && char <= '9') {
-                    res += char;
-                }
-            }
-            return parseInt(res) || 0;
-        };
 
         // មុខងារកំណត់ថ្ងៃខែឆ្នាំស្វ័យប្រវត្តិ សម្រាប់តែទម្រង់ចុះហត្ថលេខា
         function setAutoDates() {
@@ -3086,29 +3114,30 @@
             mockCandidates = []; // CLEAR OLD DATA WHEN SWITCHING!
             const config = examConfigs[currentExamKey];
 
-            if (!supabaseClient) {
-                initSupabase();
+            // 1. FAST LOCAL LOAD: Instant display from localStorage on refresh
+            let savedData = null;
+            const localStr = localStorage.getItem(config.storageKey);
+            if (localStr && localStr.trim() && localStr.trim() !== '[]') {
+                try {
+                    const parsedLocal = JSON.parse(localStr);
+                    if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
+                        savedData = parsedLocal;
+                    }
+                } catch(e) {}
             }
 
-            // 0. Try to load from Supabase Cloud first
-            let savedData = null;
+            // 2. SUPABASE CLOUD SYNC: Fetch latest data from Supabase Cloud
             try {
                 const cloudData = await fetchFromSupabase(config.storageKey);
                 if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
                     savedData = cloudData;
                 }
-            } catch(e) {}
-
-            // 1. Fallback to localStorage
-            if (!savedData) {
-                const localStr = localStorage.getItem(config.storageKey);
-                if (localStr && localStr.trim() && localStr.trim() !== '[]') {
-                    savedData = localStr;
-                }
+            } catch(e) {
+                console.warn('Supabase fetch error:', e);
             }
 
-            // 2. Fallback to Server API (works for http://localhost:8080 and file:///)
-            if (!savedData) {
+            // 3. Fallback to Server API (works for http://localhost:8080 and file:///)
+            if (!savedData && localStr !== '[]') {
                 try {
                     const apiBase = window.location.protocol.startsWith('http') ? '' : 'http://localhost:8080';
                     const controller = new AbortController();
@@ -3126,8 +3155,8 @@
                 } catch(e) {}
             }
 
-            // 3. Fallback to embedded permanent dataset in HTML!
-            if (!savedData && window.embeddedExamData && window.embeddedExamData[config.storageKey] && window.embeddedExamData[config.storageKey].length > 0) {
+            // 4. Fallback to embedded permanent dataset in HTML! (Only if never modified / never deleted)
+            if (!savedData && localStr === null && window.embeddedExamData && window.embeddedExamData[config.storageKey] && window.embeddedExamData[config.storageKey].length > 0) {
                 savedData = window.embeddedExamData[config.storageKey];
             }
             
