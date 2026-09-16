@@ -1,0 +1,38 @@
+# Temporary scripts
+*.py
+check.js
+check_render.js
+check_score.js
+fix.js
+headers.js
+replace_cols.js
+replace_regex.js
+replace_subject.js
+search.js
+search_hour.js
+search_logic.js
+search_results.js
+search_rooms.js
+search_score_vars.js
+search_subject.js
+step1.js
+step2.js
+step3.js
+temp.js
+test.js
+test_logic.js
+update_configs.js
+update_excel.js
+
+# Temporary output and logs
+*.log
+*.txt
+*.csv
+excel_preview.json
+test_localstorage.html
+
+# IDE & OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
