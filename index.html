@@ -999,13 +999,20 @@
                 </div>
 
                 <!-- Modal Footer -->
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 mt-2">
-                    <button type="button" onclick="closeCandidateModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition flex items-center gap-1.5">
-                        <i class="fas fa-times text-gray-500"></i> បោះបង់
-                    </button>
-                    <button type="submit" id="candidateModalSubmitBtn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow-md hover:shadow-lg flex items-center gap-1.5">
-                        <i class="fas fa-save"></i> រក្សាទុកការកែប្រែ
-                    </button>
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
+                    <div>
+                        <button type="button" id="candidateModalDeleteBtn" onclick="deleteCurrentModalCandidate()" class="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-sm font-medium transition flex items-center gap-1.5 shadow-xs">
+                            <i class="fas fa-trash-alt text-red-500"></i> លុបបេក្ខជននេះ
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button type="button" onclick="closeCandidateModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition flex items-center gap-1.5">
+                            <i class="fas fa-times text-gray-500"></i> បោះបង់
+                        </button>
+                        <button type="submit" id="candidateModalSubmitBtn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow-md hover:shadow-lg flex items-center gap-1.5">
+                            <i class="fas fa-save"></i> រក្សាទុកការកែប្រែ
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1212,9 +1219,13 @@
                     <td class="py-2 px-4 border-r text-center">${toKhmerNum(extractGradeNumber(c.grade))}</td>
                     <td class="py-2 px-4 border-r whitespace-nowrap">${c.school}</td>
                     <td class="py-2 px-4 border-r bg-orange-50 text-orange-800 font-semibold">${c.subject}</td>
-                    <td class="py-2 px-4 text-center">
-                        <button class="text-blue-500 hover:text-blue-700 mr-3" title="កែប្រែ" onclick="openEditCandidateModal(this)"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-500 hover:text-red-700" title="លុប" onclick="deleteCandidate(this)"><i class="fas fa-trash"></i></button>
+                    <td class="py-2 px-4 text-center whitespace-nowrap">
+                        <button type="button" class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition mr-1.5 shadow-xs cursor-pointer" title="កែប្រែព័ត៌មានបេក្ខជន" onclick="openEditCandidateModal(this)">
+                            <i class="fas fa-edit mr-1 text-blue-600"></i> កែប្រែ
+                        </button>
+                        <button type="button" class="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition shadow-xs cursor-pointer" title="លុបបេក្ខជននេះចេញ" onclick="deleteCandidate(this)">
+                            <i class="fas fa-trash-alt mr-1 text-red-600"></i> លុប
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1575,20 +1586,60 @@
             input.click();
         }
         
-        function deleteCandidate(btn) {
-            if (confirm('តើអ្នកពិតជាចង់លុបបេក្ខជននេះមែនទេ?')) {
-                pushHistoryState('លុបបេក្ខជន');
-                const tr = btn.closest('tr');
-                const rowIndex = Array.from(tr.parentNode.children).indexOf(tr);
-                mockCandidates.splice(rowIndex, 1);
-                tr.remove();
+        function deleteCandidate(btnOrIndex) {
+            let index = -1;
+            if (typeof btnOrIndex === 'number') {
+                index = btnOrIndex;
+            } else if (btnOrIndex && btnOrIndex.closest) {
+                const tr = btnOrIndex.closest('tr');
+                const seatCell = tr ? tr.querySelector('td:first-child') : null;
+                const seatVal = seatCell ? seatCell.textContent.trim() : null;
+                if (seatVal) {
+                    index = mockCandidates.findIndex(c => String(c.seat).trim() === seatVal);
+                }
+                if (index === -1 && tr && tr.parentNode) {
+                    index = Array.from(tr.parentNode.children).indexOf(tr);
+                }
+            }
+
+            if (index < 0 || index >= mockCandidates.length) {
+                showToast('មិនអាចស្វែងរកទិន្នន័យដើម្បីលុបបានទេ', 'error');
+                return;
+            }
+
+            const candName = mockCandidates[index].name || 'បេក្ខជន';
+            if (confirm(`តើលោកអ្នកពិតជាចង់លុបបេក្ខជន "${candName}" នេះមែនទេ?`)) {
+                pushHistoryState(`លុបបេក្ខជន ${candName}`);
+                mockCandidates.splice(index, 1);
                 saveCandidates(true);
-                showToast('បានលុបសិស្សម្នាក់! (អាចចុច "មិនធ្វើវិញ" បាន)', 'info');
-                // Re-render empty state if empty
+                renderExamAllTable();
+                populateDropdowns();
+                updateDashboard();
+                
+                const selectRoom = document.getElementById('roomFilterSelect');
+                if (selectRoom && selectRoom.value) {
+                    renderTableForRoom(selectRoom.value);
+                    renderAttendanceForRoom(selectRoom.value);
+                }
+                const selectScore = document.getElementById('scoreRoomFilter');
+                if (selectScore && selectScore.value) {
+                    renderScoreTableForRoom(selectScore.value);
+                }
+                
+                showToast(`បានលុបបេក្ខជន "${candName}" ដោយជោគជ័យ! (អាចចុច Undo បាន)`, 'info');
                 if (mockCandidates.length === 0) {
                     document.getElementById('examAllEmptyState').classList.remove('hidden');
                     document.getElementById('examAllTableContainer').classList.add('hidden');
+                    document.getElementById('deleteAllBtn').classList.add('hidden');
                 }
+            }
+        }
+
+        function deleteCurrentModalCandidate() {
+            const editIndex = parseInt(document.getElementById('candidateEditIndex').value);
+            if (editIndex >= 0 && editIndex < mockCandidates.length) {
+                closeCandidateModal();
+                deleteCandidate(editIndex);
             }
         }
 
@@ -1599,7 +1650,14 @@
                 index = indexOrBtn;
             } else if (indexOrBtn && indexOrBtn.closest) {
                 const tr = indexOrBtn.closest('tr');
-                index = Array.from(tr.parentNode.children).indexOf(tr);
+                const seatCell = tr ? tr.querySelector('td:first-child') : null;
+                const seatVal = seatCell ? seatCell.textContent.trim() : null;
+                if (seatVal) {
+                    index = mockCandidates.findIndex(c => String(c.seat).trim() === seatVal);
+                }
+                if (index === -1 && tr && tr.parentNode) {
+                    index = Array.from(tr.parentNode.children).indexOf(tr);
+                }
             }
             
             if (index < 0 || index >= mockCandidates.length) {
@@ -1611,6 +1669,9 @@
             document.getElementById('candidateEditIndex').value = index;
             document.getElementById('candidateModalTitle').innerHTML = '<i class="fas fa-user-edit mr-2"></i> កែប្រែព័ត៌មានបេក្ខជន';
             document.getElementById('candidateModalSubmitBtn').innerHTML = '<i class="fas fa-save mr-1.5"></i> រក្សាទុកការកែប្រែ';
+            
+            const deleteBtn = document.getElementById('candidateModalDeleteBtn');
+            if (deleteBtn) deleteBtn.classList.remove('hidden');
             
             document.getElementById('candidateSeat').value = c.seat || '';
             document.getElementById('candidateName').value = c.name || '';
@@ -1652,6 +1713,9 @@
             document.getElementById('candidateEditIndex').value = -1;
             document.getElementById('candidateModalTitle').innerHTML = '<i class="fas fa-user-plus mr-2"></i> បន្ថែមបេក្ខជនថ្មី';
             document.getElementById('candidateModalSubmitBtn').innerHTML = '<i class="fas fa-plus mr-1.5"></i> បន្ថែមបេក្ខជន';
+            
+            const deleteBtn = document.getElementById('candidateModalDeleteBtn');
+            if (deleteBtn) deleteBtn.classList.add('hidden');
             
             // Auto-generate next seat number
             let nextSeat = ('00' + (mockCandidates.length + 1)).slice(-3);
@@ -1756,6 +1820,9 @@
         window.openAddCandidateModal = openAddCandidateModal;
         window.closeCandidateModal = closeCandidateModal;
         window.saveCandidateModal = saveCandidateModal;
+        window.deleteCandidate = deleteCandidate;
+        window.deleteCurrentModalCandidate = deleteCurrentModalCandidate;
+        window.deleteAllCandidates = deleteAllCandidates;
 
         function addCandidate() {
             openAddCandidateModal();
@@ -1777,16 +1844,10 @@
                 // លុបទិន្នន័យក្នុងតារាង
                 document.getElementById('examAllTableBody').innerHTML = '';
                 mockCandidates = [];
-                localStorage.removeItem(storageKey);
-
-                try {
-                    const apiBase = window.location.protocol.startsWith('http') ? '' : 'http://localhost:8080';
-                    fetch(apiBase + '/api/data?key=' + encodeURIComponent(storageKey), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-                        body: '[]'
-                    }).catch(() => {});
-                } catch(e) {}
+                saveCandidates(true);
+                resetAllUI();
+                populateDropdowns();
+                updateDashboard();
 
                 updateAutoSaveIndicator('បានលុបទិន្នន័យទាំងអស់');
                 showToast('ទិន្នន័យត្រូវបានលុបទាំងអស់! (អាចចុច "មិនធ្វើវិញ" បាន)', 'info');
