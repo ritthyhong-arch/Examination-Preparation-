@@ -1571,13 +1571,13 @@
                 updateCloudStatusUI('syncing');
                 const { data, error } = await supabaseClient
                     .from('exam_candidates')
-                    .select('data')
+                    .select('data, updated_at')
                     .eq('exam_key', examKey)
                     .maybeSingle();
                 if (error) throw error;
                 updateCloudStatusUI('connected');
-                if (data && Array.isArray(data.data) && data.data.length > 0) {
-                    return data.data;
+                if (data && Array.isArray(data.data)) {
+                    return { data: data.data, updated_at: data.updated_at };
                 }
             } catch(e) {
                 console.warn('Supabase fetch failed:', e);
@@ -1586,18 +1586,19 @@
             return null;
         }
 
-        async function saveToSupabase(examKey, candidates) {
+        async function saveToSupabase(examKey, candidates, timestamp) {
             await ensureSupabaseReady();
             if (!supabaseClient) return false;
             try {
                 updateCloudStatusUI('syncing');
                 const cleanPayload = JSON.parse(JSON.stringify(candidates || []));
+                const updateTime = timestamp || new Date().toISOString();
                 const { error } = await supabaseClient
                     .from('exam_candidates')
                     .upsert({
                         exam_key: examKey,
                         data: cleanPayload,
-                        updated_at: new Date().toISOString()
+                        updated_at: updateTime
                     }, { onConflict: 'exam_key' });
                 if (error) throw error;
                 updateCloudStatusUI('synced');
@@ -1614,10 +1615,13 @@
             try {
                 const storageKey = examConfigs[currentExamKey].storageKey;
                 const cleanData = JSON.parse(JSON.stringify(mockCandidates || []));
+                const nowIso = new Date().toISOString();
 
-                // 1. Instant synchronous save to localStorage
+                // 1. Instant synchronous save to localStorage with timestamp
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(cleanData));
+                    localStorage.setItem(storageKey + '_updated_at', nowIso);
+                    localStorage.setItem('has_user_saved_data', 'true');
                 } catch(e) {
                     console.error('localStorage save error:', e);
                 }
@@ -1629,7 +1633,7 @@
                 }
 
                 // 3. Save to Supabase Cloud Database (zero data loss across devices!)
-                const cloudOk = await saveToSupabase(storageKey, cleanData);
+                const cloudOk = await saveToSupabase(storageKey, cleanData, nowIso);
 
                 // 4. Save permanently to physical disk file via server API (if local dev server is running)
                 try {
@@ -2280,6 +2284,40 @@
             }, 800);
         }
 
+        function autoAssignRoomsSilently() {
+            if (!mockCandidates || mockCandidates.length === 0) return;
+            
+            mockCandidates.sort((a, b) => {
+                let gradeA = extractGradeNumber(a.grade);
+                let gradeB = extractGradeNumber(b.grade);
+                if (gradeA !== gradeB) return gradeA - gradeB;
+                let subjA = String(a.subject || '').trim();
+                let subjB = String(b.subject || '').trim();
+                if (subjA !== subjB) return subjA.localeCompare(subjB, 'km');
+                return String(a.name || '').localeCompare(String(b.name || ''), 'km');
+            });
+
+            mockCandidates.forEach((c, index) => {
+                c.seat = String(index + 1).padStart(3, '0');
+            });
+
+            let currentRoomNumber = 1;
+            let roomName = toKhmerNum(currentRoomNumber);
+            let roomCount = 0;
+
+            mockCandidates.forEach((c) => {
+                if (roomCount >= 25) {
+                    currentRoomNumber++;
+                    roomName = toKhmerNum(currentRoomNumber);
+                    roomCount = 0;
+                }
+                c.room = roomName;
+                roomCount++;
+            });
+
+            populateDropdowns();
+        }
+
         function switchExamTab(event, tabId) {
             document.querySelectorAll('.exam-tab-content').forEach(el => {
                 el.classList.remove('block');
@@ -2291,13 +2329,50 @@
                 btn.classList.add('text-gray-500', 'font-medium');
             });
             
-            document.getElementById(tabId).classList.remove('hidden');
-            document.getElementById(tabId).classList.add('block');
+            const targetEl = document.getElementById(tabId);
+            if (targetEl) {
+                targetEl.classList.remove('hidden');
+                targetEl.classList.add('block');
+            }
             
             const activeBtn = event ? (event.currentTarget || event.target.closest("button")) : null;
             if(activeBtn) {
                 activeBtn.classList.remove('text-gray-500', 'font-medium');
-            activeBtn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold');
+                activeBtn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold');
+            }
+
+            // DYNAMICALLY RE-RENDER THE ACTIVE TAB CONTENT (No data lost on click!)
+            if (mockCandidates && mockCandidates.length > 0) {
+                let needsRoomGen = mockCandidates.some(c => !c.room || c.room === 'ថ្មី' || c.room === '0');
+                if (needsRoomGen) {
+                    autoAssignRoomsSilently();
+                }
+
+                let firstRoom = toKhmerNum(1);
+                let roomSelect = document.getElementById('roomFilterSelect');
+                let curRoom = (roomSelect && roomSelect.value) ? roomSelect.value : firstRoom;
+
+                if (tabId === 'exam-all') {
+                    renderExamAllTable();
+                } else if (tabId === 'exam-room') {
+                    document.getElementById('roomEmptyState').classList.add('hidden');
+                    document.getElementById('roomGeneratedData').classList.remove('hidden');
+                    const printRoomEl = document.getElementById('printRoomNumber');
+                    if (printRoomEl) printRoomEl.textContent = curRoom;
+                    renderTableForRoom(curRoom);
+                } else if (tabId === 'exam-attendance') {
+                    document.getElementById('attendanceEmptyState').classList.add('hidden');
+                    document.getElementById('attendanceGeneratedData').classList.remove('hidden');
+                    const attRoomEl = document.getElementById('printAttendanceRoomNumber');
+                    if (attRoomEl) attRoomEl.textContent = curRoom;
+                    renderAttendanceForRoom(curRoom);
+                } else if (tabId === 'exam-score') {
+                    const scoreRoomEl = document.getElementById('scoreRoomNumber');
+                    if (scoreRoomEl) scoreRoomEl.textContent = curRoom;
+                    renderScoreTableForRoom(curRoom);
+                } else if (tabId === 'exam-result') {
+                    recalculateAllScores();
+                }
             }
         }
 
@@ -3116,7 +3191,13 @@
 
             // 1. FAST LOCAL LOAD: Instant display from localStorage on refresh
             let savedData = null;
+            let localTime = 0;
             const localStr = localStorage.getItem(config.storageKey);
+            const localTimeStr = localStorage.getItem(config.storageKey + '_updated_at');
+            if (localTimeStr) {
+                localTime = new Date(localTimeStr).getTime() || 0;
+            }
+
             if (localStr && localStr.trim() && localStr.trim() !== '[]') {
                 try {
                     const parsedLocal = JSON.parse(localStr);
@@ -3126,18 +3207,34 @@
                 } catch(e) {}
             }
 
-            // 2. SUPABASE CLOUD SYNC: Fetch latest data from Supabase Cloud
+            // 2. SUPABASE CLOUD SYNC: Compare timestamps
             try {
-                const cloudData = await fetchFromSupabase(config.storageKey);
-                if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-                    savedData = cloudData;
+                const cloudResult = await fetchFromSupabase(config.storageKey);
+                if (cloudResult && cloudResult.data && Array.isArray(cloudResult.data) && cloudResult.data.length > 0) {
+                    const cloudTime = cloudResult.updated_at ? new Date(cloudResult.updated_at).getTime() : 0;
+                    // Only adopt cloud data if it is NEWER than local changes or if local has no data
+                    if (cloudTime > localTime || !savedData) {
+                        savedData = cloudResult.data;
+                        try {
+                            localStorage.setItem(config.storageKey, JSON.stringify(savedData));
+                            if (cloudResult.updated_at) {
+                                localStorage.setItem(config.storageKey + '_updated_at', cloudResult.updated_at);
+                            }
+                        } catch(e) {}
+                    } else if (savedData && localTime > cloudTime) {
+                        // Local is newer! Push local to cloud in background
+                        saveToSupabase(config.storageKey, savedData, localTimeStr);
+                    }
+                } else if (savedData && localStr && localStr !== '[]') {
+                    // Cloud has no data for this key, sync local to cloud
+                    saveToSupabase(config.storageKey, savedData, localTimeStr);
                 }
             } catch(e) {
-                console.warn('Supabase fetch error:', e);
+                console.warn('Supabase sync error:', e);
             }
 
             // 3. Fallback to Server API (works for http://localhost:8080 and file:///)
-            if (!savedData && localStr !== '[]') {
+            if (!savedData && localStr !== '[]' && !localStorage.getItem('has_user_saved_data')) {
                 try {
                     const apiBase = window.location.protocol.startsWith('http') ? '' : 'http://localhost:8080';
                     const controller = new AbortController();
@@ -3156,7 +3253,7 @@
             }
 
             // 4. Fallback to embedded permanent dataset in HTML! (Only if never modified / never deleted)
-            if (!savedData && localStr === null && window.embeddedExamData && window.embeddedExamData[config.storageKey] && window.embeddedExamData[config.storageKey].length > 0) {
+            if (!savedData && localStr === null && !localStorage.getItem('has_user_saved_data') && window.embeddedExamData && window.embeddedExamData[config.storageKey] && window.embeddedExamData[config.storageKey].length > 0) {
                 savedData = window.embeddedExamData[config.storageKey];
             }
             
@@ -3189,8 +3286,13 @@
                         updateAutoSaveIndicator();
                         updateUndoRedoUI();
                         
-                        // Check if rooms were already generated before saving
-                        let generatedRooms = [...new Set(parsedData.map(c => c.room))].filter(r => r && r !== 'ថ្មី' && r !== '0');
+                        // Check if rooms were already generated before saving, or auto-assign
+                        let generatedRooms = [...new Set(mockCandidates.map(c => c.room))].filter(r => r && r !== 'ថ្មី' && r !== '0');
+                        if (generatedRooms.length === 0 && mockCandidates.length > 0) {
+                            autoAssignRoomsSilently();
+                            generatedRooms = [...new Set(mockCandidates.map(c => c.room))].filter(r => r && r !== 'ថ្មី' && r !== '0');
+                        }
+
                         if (generatedRooms.length > 0) {
                             let maxRoom = generatedRooms.length;
                             
@@ -3343,6 +3445,9 @@
 
         function switchExam(event, examKey) {
             currentExamKey = examKey;
+            try {
+                localStorage.setItem('school_active_exam_key', examKey);
+            } catch(e) {}
             const config = examConfigs[examKey];
             
             // Update UI titles
@@ -3391,12 +3496,27 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Restore last active exam
+            const savedExam = localStorage.getItem('school_active_exam_key');
+            if (savedExam && examConfigs[savedExam]) {
+                currentExamKey = savedExam;
+                const config = examConfigs[savedExam];
+                const secTitle = document.getElementById('examSectionTitle');
+                if (secTitle) secTitle.innerHTML = `<i class="fas ${config.icon} mr-2"></i> ${config.title}`;
+                const pTitle = document.getElementById('pageTitle');
+                if (pTitle) pTitle.textContent = config.title;
+
+                document.querySelectorAll('.exam-nav-item').forEach(nav => {
+                    const onclickAttr = nav.getAttribute('onclick') || '';
+                    if (onclickAttr.includes(savedExam)) {
+                        nav.classList.add('active');
+                    } else {
+                        nav.classList.remove('active');
+                    }
+                });
+            }
+
             initSupabase();
-            let savedOut = localStorage.getItem('schoolExamCandidates');
-            let savedTest = localStorage.getItem('schoolExamCandidates_test1');
-            console.log("ON LOAD: outstanding length =", savedOut ? savedOut.length : 'null');
-            console.log("ON LOAD: test1 length =", savedTest ? savedTest.length : 'null');
-            
             setAutoDates();
             loadExamData();
         });
