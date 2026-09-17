@@ -1050,7 +1050,7 @@
         const navItems = document.querySelectorAll('.nav-item');
         const pageTitle = document.getElementById('pageTitle');
         const searchInput = document.getElementById('searchInput');
-        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationBtn = document.getElementById('notificationBtn') || document.getElementById('notifButton');
 
         function toggleSidebar() {
             const isClosed = sidebar.classList.contains('-translate-x-full');
@@ -1102,6 +1102,9 @@
                 });
 
                 const targetId = item.getAttribute('data-target');
+                try {
+                    localStorage.setItem('school_active_view_id', targetId);
+                } catch(err) {}
                 const targetView = document.getElementById(targetId);
                 
                 if (targetView) {
@@ -2355,39 +2358,50 @@
                 if (tabId === 'exam-all') {
                     renderExamAllTable();
                 } else if (tabId === 'exam-room') {
-                    document.getElementById('roomEmptyState').classList.add('hidden');
-                    document.getElementById('roomGeneratedData').classList.remove('hidden');
+                    const rEmpty = document.getElementById('roomEmptyState');
+                    if (rEmpty) rEmpty.classList.add('hidden');
+                    const rGen = document.getElementById('roomGeneratedData');
+                    if (rGen) rGen.classList.remove('hidden');
                     const printRoomEl = document.getElementById('printRoomNumber');
                     if (printRoomEl) printRoomEl.textContent = curRoom;
                     renderTableForRoom(curRoom);
                 } else if (tabId === 'exam-attendance') {
-                    document.getElementById('attendanceEmptyState').classList.add('hidden');
-                    document.getElementById('attendanceGeneratedData').classList.remove('hidden');
+                    const aEmpty = document.getElementById('attendanceEmptyState');
+                    if (aEmpty) aEmpty.classList.add('hidden');
+                    const aGen = document.getElementById('attendanceGeneratedData');
+                    if (aGen) aGen.classList.remove('hidden');
                     const attRoomEl = document.getElementById('printAttendanceRoomNumber');
                     if (attRoomEl) attRoomEl.textContent = curRoom;
                     renderAttendanceForRoom(curRoom);
-                } else if (tabId === 'exam-score') {
+                } else if (tabId === 'exam-results' || tabId === 'exam-result' || tabId === 'exam-score') {
+                    recalculateAllScores(false);
+                    const sSelect = document.getElementById('scoreRoomFilter');
+                    let scoreRoom = (sSelect && sSelect.value) ? sSelect.value : curRoom;
                     const scoreRoomEl = document.getElementById('scoreRoomNumber');
-                    if (scoreRoomEl) scoreRoomEl.textContent = curRoom;
-                    renderScoreTableForRoom(curRoom);
-                } else if (tabId === 'exam-result') {
-                    recalculateAllScores();
+                    if (scoreRoomEl) scoreRoomEl.textContent = scoreRoom;
+                    renderScoreTableForRoom(scoreRoom);
+                } else if (tabId === 'exam-dashboard') {
+                    updateDashboard();
                 }
             }
         }
 
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && searchInput.value.trim() !== '') {
-                e.preventDefault();
-                showToast(`កំពុងស្វែងរកទិន្នន័យ៖ "${searchInput.value}"`, 'info');
-                searchInput.value = ''; 
-                searchInput.blur();
-            }
-        });
+        if (searchInput) {
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && searchInput.value.trim() !== '') {
+                    e.preventDefault();
+                    showToast(`កំពុងស្វែងរកទិន្នន័យ៖ "${searchInput.value}"`, 'info');
+                    searchInput.value = ''; 
+                    searchInput.blur();
+                }
+            });
+        }
 
-        notificationBtn.addEventListener('click', () => {
-            showToast('អ្នកមានសារជូនដំណឹងថ្មីចំនួន ៣ ពីប្រព័ន្ធ', 'info');
-        });
+        if (notificationBtn) {
+            notificationBtn.addEventListener('click', () => {
+                showToast('អ្នកមានសារជូនដំណឹងថ្មីចំនួន ៣ ពីប្រព័ន្ធ', 'info');
+            });
+        }
 
         // មុខងារ Filter តាមបន្ទប់
         function filterByRoom(roomNumber) {
@@ -3079,7 +3093,7 @@
 
         // Auto-load saved candidates on page load
         
-        function recalculateAllScores() {
+        function recalculateAllScores(shouldSave = false) {
             mockCandidates.forEach(c => {
                 let total = 0;
                 let hasValue = false;
@@ -3131,7 +3145,9 @@
                     }
                 }
             });
-            saveCandidates();
+            if (shouldSave) {
+                saveCandidates(true);
+            }
         }
 
         
@@ -3184,57 +3200,132 @@
         }
 
 
+        function applyCandidatesData(parsedData) {
+            if (!parsedData || !Array.isArray(parsedData) || parsedData.length === 0) return false;
+            
+            mockCandidates = parsedData;
+            
+            // Auto assign rooms silently if missing or incomplete
+            let needsRoomGen = mockCandidates.some(c => !c.room || c.room === 'ថ្មី' || c.room === '0');
+            if (needsRoomGen) {
+                autoAssignRoomsSilently();
+            }
+            
+            recalculateAllScores(false);
+            
+            const emptyState = document.getElementById('examAllEmptyState');
+            if (emptyState) emptyState.classList.add('hidden');
+            const tableContainer = document.getElementById('examAllTableContainer');
+            if (tableContainer) tableContainer.classList.remove('hidden');
+            const delBtn = document.getElementById('deleteAllBtn');
+            if (delBtn) delBtn.classList.remove('hidden');
+            const saveBtn = document.getElementById('saveCandidatesBtn');
+            if (saveBtn) saveBtn.classList.remove('hidden');
+            
+            renderExamAllTable();
+            populateDropdowns();
+            updateAutoSaveIndicator();
+            updateUndoRedoUI();
+            
+            let generatedRooms = [...new Set(mockCandidates.map(c => c.room))].filter(r => r && r !== 'ថ្មី' && r !== '0');
+            if (generatedRooms.length > 0) {
+                let maxRoom = generatedRooms.length;
+                
+                // Re-populate dropdowns
+                const selectRoom = document.getElementById('roomFilterSelect');
+                const selectAttendance = document.getElementById('attendanceRoomFilterSelect');
+                const selectScore = document.getElementById('scoreRoomFilter');
+                const selectDashRoom = document.getElementById('dashRoomFilter');
+                
+                let optionsHTML = '<option value="all">គ្រប់បន្ទប់ទាំងអស់</option>';
+                let roomOptionsHTML = '';
+                for(let r=1; r<=maxRoom; r++) {
+                    let khRoom = toKhmerNum(r);
+                    roomOptionsHTML += `<option value="${khRoom}">បន្ទប់លេខ ${khRoom}</option>`;
+                }
+                if (selectRoom) selectRoom.innerHTML = roomOptionsHTML;
+                if (selectAttendance) selectAttendance.innerHTML = roomOptionsHTML;
+                if (selectScore) selectScore.innerHTML = optionsHTML + roomOptionsHTML;
+                if (selectDashRoom) selectDashRoom.innerHTML = optionsHTML + roomOptionsHTML;
+
+                const selectDashGrade = document.getElementById('dashGradeFilter');
+                const selectTop3Grade = document.getElementById('top3GradeFilter');
+                if (selectDashGrade || selectTop3Grade) {
+                    let uniqueGrades = [...new Set(mockCandidates.map(c => extractGradeNumber(c.grade)))].filter(g => g > 0).sort((a,b) => a-b);
+                    let gradeHTML = '<option value="all">គ្រប់កម្រិតថ្នាក់</option>';
+                    let top3GradeHTML = '';
+                    uniqueGrades.forEach(g => {
+                        gradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
+                        top3GradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
+                    });
+                    if (selectDashGrade) selectDashGrade.innerHTML = gradeHTML;
+                    if (selectTop3Grade) {
+                        selectTop3Grade.innerHTML = top3GradeHTML;
+                        if (uniqueGrades.length > 0) {
+                            selectTop3Grade.value = uniqueGrades[0];
+                        }
+                    }
+                }
+                
+                // Show room states
+                const roomEmpty = document.getElementById('roomEmptyState');
+                if (roomEmpty) roomEmpty.classList.add('hidden');
+                const roomGen = document.getElementById('roomGeneratedData');
+                if (roomGen) roomGen.classList.remove('hidden');
+                
+                const attEmpty = document.getElementById('attendanceEmptyState');
+                if (attEmpty) attEmpty.classList.add('hidden');
+                const attGen = document.getElementById('attendanceGeneratedData');
+                if (attGen) attGen.classList.remove('hidden');
+                
+                let firstRoom = toKhmerNum(1);
+                if (selectRoom) selectRoom.value = firstRoom;
+                
+                const attendanceRoomEl = document.getElementById('printAttendanceRoomNumber');
+                if (attendanceRoomEl) attendanceRoomEl.textContent = firstRoom;
+                if (selectAttendance) selectAttendance.value = firstRoom;
+                
+                const printRoomEl = document.getElementById('printRoomNumber');
+                if (printRoomEl) printRoomEl.textContent = firstRoom;
+                renderTableForRoom(firstRoom);
+                renderAttendanceForRoom(firstRoom);
+                
+                if (selectScore) selectScore.value = firstRoom;
+                const scoreRoomEl = document.getElementById('scoreRoomNumber');
+                if (scoreRoomEl) scoreRoomEl.textContent = firstRoom;
+                renderScoreTableForRoom(firstRoom);
+            }
+            return true;
+        }
+
         async function loadExamData() {
             let loaded = false;
-            mockCandidates = []; // CLEAR OLD DATA WHEN SWITCHING!
-            const config = examConfigs[currentExamKey];
+            const config = examConfigs[currentExamKey] || examConfigs['outstanding'];
 
-            // 1. FAST LOCAL LOAD: Instant display from localStorage on refresh
-            let savedData = null;
-            let localTime = 0;
+            // 1. FAST LOCAL LOAD: Instant 0ms display from localStorage on refresh
             const localStr = localStorage.getItem(config.storageKey);
             const localTimeStr = localStorage.getItem(config.storageKey + '_updated_at');
-            if (localTimeStr) {
-                localTime = new Date(localTimeStr).getTime() || 0;
-            }
+            let localTime = localTimeStr ? (new Date(localTimeStr).getTime() || 0) : 0;
 
             if (localStr && localStr.trim() && localStr.trim() !== '[]') {
                 try {
                     const parsedLocal = JSON.parse(localStr);
                     if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
-                        savedData = parsedLocal;
+                        loaded = applyCandidatesData(parsedLocal);
                     }
                 } catch(e) {}
             }
 
-            // 2. SUPABASE CLOUD SYNC: Compare timestamps
-            try {
-                const cloudResult = await fetchFromSupabase(config.storageKey);
-                if (cloudResult && cloudResult.data && Array.isArray(cloudResult.data) && cloudResult.data.length > 0) {
-                    const cloudTime = cloudResult.updated_at ? new Date(cloudResult.updated_at).getTime() : 0;
-                    // Only adopt cloud data if it is NEWER than local changes or if local has no data
-                    if (cloudTime > localTime || !savedData) {
-                        savedData = cloudResult.data;
-                        try {
-                            localStorage.setItem(config.storageKey, JSON.stringify(savedData));
-                            if (cloudResult.updated_at) {
-                                localStorage.setItem(config.storageKey + '_updated_at', cloudResult.updated_at);
-                            }
-                        } catch(e) {}
-                    } else if (savedData && localTime > cloudTime) {
-                        // Local is newer! Push local to cloud in background
-                        saveToSupabase(config.storageKey, savedData, localTimeStr);
-                    }
-                } else if (savedData && localStr && localStr !== '[]') {
-                    // Cloud has no data for this key, sync local to cloud
-                    saveToSupabase(config.storageKey, savedData, localTimeStr);
-                }
-            } catch(e) {
-                console.warn('Supabase sync error:', e);
+            // 2. EMBEDDED DATA FALLBACK: Instant display if localStorage is clean
+            if (!loaded && window.embeddedExamData && window.embeddedExamData[config.storageKey] && window.embeddedExamData[config.storageKey].length > 0) {
+                loaded = applyCandidatesData(window.embeddedExamData[config.storageKey]);
+                try {
+                    localStorage.setItem(config.storageKey, JSON.stringify(mockCandidates));
+                } catch(e) {}
             }
 
-            // 3. Fallback to Server API (works for http://localhost:8080 and file:///)
-            if (!savedData && localStr !== '[]' && !localStorage.getItem('has_user_saved_data')) {
+            // 3. Fallback to Server API if running locally
+            if (!loaded) {
                 try {
                     const apiBase = window.location.protocol.startsWith('http') ? '' : 'http://localhost:8080';
                     const controller = new AbortController();
@@ -3246,197 +3337,43 @@
                     if (res.ok) {
                         const diskJson = await res.json();
                         if (diskJson && Array.isArray(diskJson) && diskJson.length > 0) {
-                            savedData = diskJson;
+                            loaded = applyCandidatesData(diskJson);
+                            try { localStorage.setItem(config.storageKey, JSON.stringify(mockCandidates)); } catch(e) {}
                         }
                     }
                 } catch(e) {}
             }
 
-            // 4. Fallback to embedded permanent dataset in HTML! (Only if never modified / never deleted)
-            if (!savedData && localStr === null && !localStorage.getItem('has_user_saved_data') && window.embeddedExamData && window.embeddedExamData[config.storageKey] && window.embeddedExamData[config.storageKey].length > 0) {
-                savedData = window.embeddedExamData[config.storageKey];
-            }
-            
-            // Clear existing state before loading
-            resetAllUI();
-            
-            if (savedData) {
-                try {
-                    let parsedData = Array.isArray(savedData) 
-                        ? savedData 
-                        : JSON.parse(String(savedData).trim().replace(/^\uFEFF/, ''));
-                    if (parsedData && parsedData.length > 0) {
-                        mockCandidates = parsedData;
-                        loaded = true;
-
-                        // Keep localStorage in sync
+            // 4. SUPABASE CLOUD SYNC: Seamless background synchronization without UI block
+            try {
+                const cloudResult = await fetchFromSupabase(config.storageKey);
+                if (cloudResult && cloudResult.data && Array.isArray(cloudResult.data) && cloudResult.data.length > 0) {
+                    const cloudTime = cloudResult.updated_at ? new Date(cloudResult.updated_at).getTime() : 0;
+                    if (cloudTime > localTime || !loaded) {
+                        // Cloud has newer data or local was empty
+                        loaded = applyCandidatesData(cloudResult.data);
                         try {
                             localStorage.setItem(config.storageKey, JSON.stringify(mockCandidates));
+                            if (cloudResult.updated_at) {
+                                localStorage.setItem(config.storageKey + '_updated_at', cloudResult.updated_at);
+                            }
                         } catch(e) {}
-                        
-                        recalculateAllScores();
-                        
-                        document.getElementById('examAllEmptyState').classList.add('hidden');
-                        document.getElementById('examAllTableContainer').classList.remove('hidden');
-                        document.getElementById('deleteAllBtn').classList.remove('hidden');
-                        document.getElementById('saveCandidatesBtn').classList.remove('hidden');
-                        
-                        renderExamAllTable();
-                        populateDropdowns();
-                        updateAutoSaveIndicator();
-                        updateUndoRedoUI();
-                        
-                        // Check if rooms were already generated before saving, or auto-assign
-                        let generatedRooms = [...new Set(mockCandidates.map(c => c.room))].filter(r => r && r !== 'ថ្មី' && r !== '0');
-                        if (generatedRooms.length === 0 && mockCandidates.length > 0) {
-                            autoAssignRoomsSilently();
-                            generatedRooms = [...new Set(mockCandidates.map(c => c.room))].filter(r => r && r !== 'ថ្មី' && r !== '0');
-                        }
-
-                        if (generatedRooms.length > 0) {
-                            let maxRoom = generatedRooms.length;
-                            
-                            // Re-populate dropdowns
-                            const selectRoom = document.getElementById('roomFilterSelect');
-                            const selectAttendance = document.getElementById('attendanceRoomFilterSelect');
-                            const selectScore = document.getElementById('scoreRoomFilter');
-                            const selectDashRoom = document.getElementById('dashRoomFilter');
-                            
-                            let optionsHTML = '<option value="all">គ្រប់បន្ទប់ទាំងអស់</option>';
-                            let roomOptionsHTML = '';
-                            for(let r=1; r<=maxRoom; r++) {
-                                let khRoom = toKhmerNum(r);
-                                roomOptionsHTML += `<option value="${khRoom}">បន្ទប់លេខ ${khRoom}</option>`;
-                            }
-                            if (selectRoom) selectRoom.innerHTML = roomOptionsHTML;
-                            if (selectAttendance) selectAttendance.innerHTML = roomOptionsHTML;
-                            if (selectScore) selectScore.innerHTML = optionsHTML + roomOptionsHTML;
-                            if (selectDashRoom) selectDashRoom.innerHTML = optionsHTML + roomOptionsHTML;
-
-                            const selectDashGrade = document.getElementById('dashGradeFilter');
-                            const selectTop3Grade = document.getElementById('top3GradeFilter');
-                            if (selectDashGrade || selectTop3Grade) {
-                                let uniqueGrades = [...new Set(mockCandidates.map(c => extractGradeNumber(c.grade)))].filter(g => g > 0).sort((a,b) => a-b);
-                                let gradeHTML = '<option value="all">គ្រប់កម្រិតថ្នាក់</option>';
-                                let top3GradeHTML = '';
-                                uniqueGrades.forEach(g => {
-                                    gradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
-                                    top3GradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
-                                });
-                                if (selectDashGrade) selectDashGrade.innerHTML = gradeHTML;
-                                if (selectTop3Grade) {
-                                    selectTop3Grade.innerHTML = top3GradeHTML;
-                                    if (uniqueGrades.length > 0) {
-                                        selectTop3Grade.value = uniqueGrades[0];
-                                    }
-                                }
-                            }
-                            
-                            // Show room states
-                            document.getElementById('roomEmptyState').classList.add('hidden');
-                            document.getElementById('roomGeneratedData').classList.remove('hidden');
-                            
-                            document.getElementById('attendanceEmptyState').classList.add('hidden');
-                            document.getElementById('attendanceGeneratedData').classList.remove('hidden');
-                            
-                            let firstRoom = toKhmerNum(1);
-                            if(selectRoom) selectRoom.value = firstRoom;
-                            
-                            const attendanceRoomEl = document.getElementById('printAttendanceRoomNumber');
-                            if (attendanceRoomEl) attendanceRoomEl.textContent = firstRoom;
-                            if(selectAttendance) selectAttendance.value = firstRoom;
-                            
-                            const printRoomEl = document.getElementById('printRoomNumber');
-                            if (printRoomEl) printRoomEl.textContent = firstRoom;
-                            renderTableForRoom(firstRoom);
-                            renderAttendanceForRoom(firstRoom);
-                            
-                            if(selectScore) selectScore.value = firstRoom;
-                            const scoreRoomEl = document.getElementById('scoreRoomNumber');
-                            if (scoreRoomEl) scoreRoomEl.textContent = firstRoom;
-                            renderScoreTableForRoom(firstRoom);
-                        }
+                    } else if (loaded && localTime > cloudTime) {
+                        // Local is newer! Push to cloud in background
+                        saveToSupabase(config.storageKey, mockCandidates, localTimeStr);
                     }
-                } catch (e) {
-                    console.error("Failed to parse saved candidates", e);
+                } else if (loaded && (!cloudResult || !cloudResult.data || cloudResult.data.length === 0)) {
+                    // Cloud has no data for this exam, save local candidates to cloud
+                    saveToSupabase(config.storageKey, mockCandidates, localTimeStr || new Date().toISOString());
                 }
+            } catch(e) {
+                console.warn('Supabase background sync error:', e);
             }
-            
-            // FALLBACK TO MOCK DATA IF NOT LOADED
+
+            // 5. If no candidates found anywhere, show empty state
             if (!loaded) {
-                // DO NOT load default mock data anymore. Start empty so they don't cross over.
                 mockCandidates = [];
-                
-                if (mockCandidates && mockCandidates.length > 0) {
-                    document.getElementById('examAllEmptyState').classList.add('hidden');
-                    document.getElementById('examAllTableContainer').classList.remove('hidden');
-                    document.getElementById('deleteAllBtn').classList.remove('hidden');
-                    document.getElementById('saveCandidatesBtn').classList.remove('hidden');
-                    renderExamAllTable();
-                    
-                    // Set default dropdowns based on mock data rooms
-                    let generatedRooms = [...new Set(mockCandidates.map(c => c.room))].filter(r => r && r !== 'ថ្មី' && r !== '0');
-                    if (generatedRooms.length > 0) {
-                        let maxRoom = generatedRooms.length;
-                        const selectRoom = document.getElementById('roomFilterSelect');
-                        const selectAttendance = document.getElementById('attendanceRoomFilterSelect');
-                        const selectScore = document.getElementById('scoreRoomFilter');
-                        const selectDashRoom = document.getElementById('dashRoomFilter');
-                        
-                        let optionsHTML = '<option value="all">គ្រប់បន្ទប់ទាំងអស់</option>';
-                        let roomOptionsHTML = '';
-                        for(let r=1; r<=maxRoom; r++) {
-                            let khRoom = toKhmerNum(r);
-                            roomOptionsHTML += `<option value="${khRoom}">បន្ទប់លេខ ${khRoom}</option>`;
-                        }
-                        if (selectRoom) selectRoom.innerHTML = roomOptionsHTML;
-                        if (selectAttendance) selectAttendance.innerHTML = roomOptionsHTML;
-                        if (selectScore) selectScore.innerHTML = optionsHTML + roomOptionsHTML;
-                        if (selectDashRoom) selectDashRoom.innerHTML = optionsHTML + roomOptionsHTML;
-
-                        const selectDashGrade = document.getElementById('dashGradeFilter');
-                        const selectTop3Grade = document.getElementById('top3GradeFilter');
-                        if (selectDashGrade || selectTop3Grade) {
-                            let uniqueGrades = [...new Set(mockCandidates.map(c => extractGradeNumber(c.grade)))].filter(g => g > 0).sort((a,b) => a-b);
-                            let gradeHTML = '<option value="all">គ្រប់កម្រិតថ្នាក់</option>';
-                            let top3GradeHTML = '';
-                            uniqueGrades.forEach(g => {
-                                gradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
-                                top3GradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
-                            });
-                            if (selectDashGrade) selectDashGrade.innerHTML = gradeHTML;
-                            if (selectTop3Grade) {
-                                selectTop3Grade.innerHTML = top3GradeHTML;
-                                if (uniqueGrades.length > 0) {
-                                    selectTop3Grade.value = uniqueGrades[0];
-                                }
-                            }
-                        }
-
-                        document.getElementById('roomEmptyState').classList.add('hidden');
-                        document.getElementById('roomGeneratedData').classList.remove('hidden');
-                        
-                        document.getElementById('attendanceEmptyState').classList.add('hidden');
-                        document.getElementById('attendanceGeneratedData').classList.remove('hidden');
-                        
-                        let firstRoom = toKhmerNum(1);
-                        if(selectRoom) selectRoom.value = firstRoom;
-                        
-                        const attendanceRoomEl = document.getElementById('printAttendanceRoomNumber');
-                        if (attendanceRoomEl) attendanceRoomEl.textContent = firstRoom;
-                        if(selectAttendance) selectAttendance.value = firstRoom;
-                        
-                        const printRoomEl = document.getElementById('printRoomNumber');
-                        if (printRoomEl) printRoomEl.textContent = firstRoom;
-                        renderTableForRoom(firstRoom);
-                        renderAttendanceForRoom(firstRoom);
-                        
-                        if(selectScore) selectScore.value = firstRoom;
-                        const scoreRoomEl = document.getElementById('scoreRoomNumber');
-                        if (scoreRoomEl) scoreRoomEl.textContent = firstRoom;
-                        renderScoreTableForRoom(firstRoom);
-                    }
-                }
+                resetAllUI();
             }
             
             // Re-render Dashboard
@@ -3447,9 +3384,21 @@
             currentExamKey = examKey;
             try {
                 localStorage.setItem('school_active_exam_key', examKey);
+                localStorage.setItem('school_active_view_id', 'view-outstanding-exam');
             } catch(e) {}
-            const config = examConfigs[examKey];
+            const config = examConfigs[examKey] || examConfigs['outstanding'];
             
+            // Ensure view-outstanding-exam is visible
+            document.querySelectorAll('.view-section').forEach(view => {
+                view.classList.remove('block');
+                view.classList.add('hidden');
+            });
+            const examView = document.getElementById('view-outstanding-exam');
+            if (examView) {
+                examView.classList.remove('hidden');
+                examView.classList.add('block');
+            }
+
             // Update UI titles
             document.getElementById('examSectionTitle').innerHTML = `<i class="fas ${config.icon} mr-2"></i> ${config.title}`;
             document.getElementById('pageTitle').textContent = config.title;
@@ -3494,27 +3443,38 @@
             loadExamData();
         }
 
-
         document.addEventListener('DOMContentLoaded', () => {
             // Restore last active exam
-            const savedExam = localStorage.getItem('school_active_exam_key');
-            if (savedExam && examConfigs[savedExam]) {
-                currentExamKey = savedExam;
-                const config = examConfigs[savedExam];
-                const secTitle = document.getElementById('examSectionTitle');
-                if (secTitle) secTitle.innerHTML = `<i class="fas ${config.icon} mr-2"></i> ${config.title}`;
-                const pTitle = document.getElementById('pageTitle');
-                if (pTitle) pTitle.textContent = config.title;
+            const savedExam = localStorage.getItem('school_active_exam_key') || 'outstanding';
+            currentExamKey = (examConfigs && examConfigs[savedExam]) ? savedExam : 'outstanding';
+            const config = examConfigs[currentExamKey] || examConfigs['outstanding'];
+            
+            const secTitle = document.getElementById('examSectionTitle');
+            if (secTitle) secTitle.innerHTML = `<i class="fas ${config.icon} mr-2"></i> ${config.title}`;
+            const pTitle = document.getElementById('pageTitle');
+            if (pTitle) pTitle.textContent = config.title;
 
-                document.querySelectorAll('.exam-nav-item').forEach(nav => {
-                    const onclickAttr = nav.getAttribute('onclick') || '';
-                    if (onclickAttr.includes(savedExam)) {
-                        nav.classList.add('active');
-                    } else {
-                        nav.classList.remove('active');
-                    }
-                });
+            // Restore active view (default to view-outstanding-exam for convenience)
+            const activeViewId = localStorage.getItem('school_active_view_id') || 'view-outstanding-exam';
+            document.querySelectorAll('.view-section').forEach(view => {
+                view.classList.remove('block');
+                view.classList.add('hidden');
+            });
+            const activeViewEl = document.getElementById(activeViewId) || document.getElementById('view-outstanding-exam');
+            if (activeViewEl) {
+                activeViewEl.classList.remove('hidden');
+                activeViewEl.classList.add('block');
             }
+
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                const target = nav.getAttribute('data-target');
+                const onclickAttr = nav.getAttribute('onclick') || '';
+                if (target === activeViewId && (target !== 'view-outstanding-exam' || onclickAttr.includes(currentExamKey))) {
+                    nav.classList.add('active');
+                } else {
+                    nav.classList.remove('active');
+                }
+            });
 
             initSupabase();
             setAutoDates();
