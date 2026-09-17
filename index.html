@@ -21,11 +21,25 @@
         .nav-item.active { background-color: #1e40af; border-left: 4px solid #60a5fa; } 
         #sidebar { transition: transform 0.3s ease-in-out; }
         
-        /* សម្រាប់លាក់អ្វីៗផ្សេងពេល Print និងកំណត់ក្រដាស A4 តែ១សន្លឹក */
+        /* សម្រាប់លាក់អ្វីៗផ្សេងពេល Print និងកំណត់ទម្រង់ក្រដាស A4 */
         @media print {
             @page {
                 size: A4 portrait;
                 margin: 5mm; /* Very small margin */
+            }
+            @page landscape {
+                size: A4 landscape;
+                margin: 5mm;
+            }
+            @page portrait {
+                size: A4 portrait;
+                margin: 5mm;
+            }
+            .page-landscape {
+                page: landscape;
+            }
+            .page-portrait {
+                page: portrait;
             }
             body {
                 background-color: white;
@@ -47,7 +61,7 @@
                 overflow: visible !important;
                 position: static !important;
             }
-            #printablePaper, #attendancePrintablePaper, .bg-white.shadow-xl.mx-auto {
+            #printablePaper, #attendancePrintablePaper, #scorePrintablePaper, .bg-white.shadow-xl.mx-auto {
                 box-shadow: none !important;
                 border: none !important;
                 margin: 0 auto !important;
@@ -57,6 +71,28 @@
                 page-break-after: avoid;
                 page-break-before: avoid;
                 page-break-inside: avoid;
+            }
+            
+            /* Print adjustments for Results Score Sheet in A4 Landscape */
+            #scorePrintablePaper {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 auto !important;
+            }
+            #scorePrintablePaper .pt-12 {
+                padding-top: 1rem !important;
+            }
+            #scorePrintablePaper table {
+                width: 100% !important;
+                margin-bottom: 0 !important;
+            }
+            #scorePrintablePaper table th,
+            #scorePrintablePaper table td {
+                padding-top: 0.12rem !important;
+                padding-bottom: 0.12rem !important;
+                font-size: 12px !important;
+                line-height: 1.25 !important;
             }
             
             /* Squeeze the vertical spaces of Tailwind classes for printing */
@@ -125,6 +161,9 @@
         body.role-user .admin-only {
             display: none !important;
         }
+    </style>
+    <style id="dynamicPrintOrientation">
+        @page { size: A4 landscape !important; margin: 5mm !important; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden role-user">
@@ -691,12 +730,12 @@
                                     </button>
                                     <button class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="saveCandidates(false)"><i class="fas fa-save mr-1"></i> រក្សាទុក</button>
                                     <button class="admin-only bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="showTop3State()"><i class="fas fa-medal mr-1"></i> Top 3</button>
-                                    <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="window.print()"><i class="fas fa-print mr-1"></i> Print</button>
+                                    <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="printScoreSheet()"><i class="fas fa-print mr-1"></i> Print</button>
                                 </div>
                             </div>
 
                             <!-- Printable Score Sheet -->
-                            <div class="bg-white shadow-xl mx-auto px-10 pt-8 pb-12 border border-gray-200 text-black overflow-x-auto" style="max-width: 1100px;">
+                            <div id="scorePrintablePaper" class="bg-white shadow-xl mx-auto px-10 pt-8 pb-12 border border-gray-200 text-black overflow-x-auto page-landscape" style="max-width: 1100px;">
                                 <!-- Top Header Section (Standard Layout) -->
                                 <div class="relative mb-3 text-black">
                                     <!-- Kingdom Header (Top Right) -->
@@ -2328,6 +2367,37 @@
             populateDropdowns();
         }
 
+        // Print Orientation Helper (A4 Landscape for Results, Portrait for others)
+        function setPrintOrientation(orientation) {
+            let styleEl = document.getElementById('dynamicPrintOrientation');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamicPrintOrientation';
+                document.head.appendChild(styleEl);
+            }
+            if (orientation === 'landscape') {
+                styleEl.innerHTML = `@page { size: A4 landscape !important; margin: 5mm !important; }`;
+            } else {
+                styleEl.innerHTML = `@page { size: A4 portrait !important; margin: 5mm !important; }`;
+            }
+        }
+
+        function printScoreSheet() {
+            setPrintOrientation('landscape');
+            setTimeout(() => {
+                window.print();
+            }, 60);
+        }
+
+        window.addEventListener('beforeprint', () => {
+            const resultsTab = document.getElementById('exam-results');
+            if (resultsTab && !resultsTab.classList.contains('hidden')) {
+                setPrintOrientation('landscape');
+            } else {
+                setPrintOrientation('portrait');
+            }
+        });
+
         function switchExamTab(event, tabId) {
             // In User mode, restrict navigation to Results tab only
             if (isUserMode() && tabId !== 'exam-results' && tabId !== 'exam-result' && tabId !== 'exam-score') {
@@ -2373,6 +2443,7 @@
                 if (tabId === 'exam-all') {
                     renderExamAllTable();
                 } else if (tabId === 'exam-room') {
+                    setPrintOrientation('portrait');
                     const rEmpty = document.getElementById('roomEmptyState');
                     if (rEmpty) rEmpty.classList.add('hidden');
                     const rGen = document.getElementById('roomGeneratedData');
@@ -2389,6 +2460,7 @@
                     if (attRoomEl) attRoomEl.textContent = curRoom;
                     renderAttendanceForRoom(curRoom);
                 } else if (tabId === 'exam-results' || tabId === 'exam-result' || tabId === 'exam-score') {
+                    setPrintOrientation('landscape');
                     recalculateAllScores(false);
                     const sSelect = document.getElementById('scoreRoomFilter');
                     let scoreRoom = (sSelect && sSelect.value) ? sSelect.value : curRoom;
@@ -3572,6 +3644,15 @@
             else if (key === 's') {
                 e.preventDefault();
                 saveCandidates(false);
+            }
+            // Ctrl+P: Print
+            else if (key === 'p') {
+                const resultsTab = document.getElementById('exam-results');
+                if (resultsTab && !resultsTab.classList.contains('hidden')) {
+                    setPrintOrientation('landscape');
+                } else {
+                    setPrintOrientation('portrait');
+                }
             }
         });
     
