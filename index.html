@@ -2693,13 +2693,14 @@
                 const tr = document.createElement('tr');
                 const m = c.mention;
                 const mColor = m === 'A' ? 'text-blue-600' : m === 'B' ? 'text-green-600' : m === 'C' ? 'text-yellow-600' : m === 'D' ? 'text-orange-500' : m === 'E' ? 'text-purple-600' : m === 'F' ? 'text-red-600' : 'text-gray-800';
+                const strikeClass = (c.passed === false) ? 'failed-candidate-strike' : '';
                 tr.innerHTML = `
-                    <td class="border border-black px-1 py-1.5 text-center">${index + 1}</td>
-                    <td class="border border-black px-1 py-1.5 text-center">${c.seat}</td>
-                    <td class="border border-black px-2 py-1.5 text-left"><span class="candidate-name-wrap ${c.passed === false ? 'failed-candidate-strike' : ''}">${c.name}</span></td>
-                    <td class="border border-black px-1 py-1.5 text-center">${toKhmerNum(extractGradeNumber(c.grade))}</td>
-                    <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap">${c.school}</td>
-                    <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap" style="background-color: #fef08a;">${c.subject}</td>
+                    <td class="border border-black px-1 py-1.5 text-center"><span class="failed-candidate-target ${strikeClass}">${index + 1}</span></td>
+                    <td class="border border-black px-1 py-1.5 text-center"><span class="failed-candidate-target ${strikeClass}">${c.seat}</span></td>
+                    <td class="border border-black px-2 py-1.5 text-left"><span class="candidate-name-wrap failed-candidate-target ${strikeClass}">${c.name}</span></td>
+                    <td class="border border-black px-1 py-1.5 text-center"><span class="failed-candidate-target ${strikeClass}">${toKhmerNum(extractGradeNumber(c.grade))}</span></td>
+                    <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap"><span class="failed-candidate-target ${strikeClass}">${c.school}</span></td>
+                    <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap" style="background-color: #fef08a;"><span class="failed-candidate-target ${strikeClass}">${c.subject}</span></td>
                     ${currentExamKey === 'outstanding' ? `
                     <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="100" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
                     <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap" style="background-color: #f3f4f6;">វប្បធម៌ទូទៅ</td>
@@ -2830,6 +2831,20 @@
                     const mentionCell = currentExamKey === 'outstanding' ? row.querySelector('td:nth-child(12)') : row.querySelector('td:nth-child(16)');
                     const nameCell = row.querySelector('td:nth-child(3)');
                     const nameSpan = row.querySelector('.candidate-name-wrap') || nameCell;
+                    const strikeTargets = row.querySelectorAll('.failed-candidate-target');
+                    const updateRowStrike = (isFailed) => {
+                        strikeTargets.forEach(el => {
+                            if (isFailed) {
+                                el.classList.add('failed-candidate-strike');
+                            } else {
+                                el.classList.remove('failed-candidate-strike', 'line-through', 'text-red-600');
+                            }
+                        });
+                        if (nameCell) {
+                            if (isFailed) nameCell.classList.add('text-red-600');
+                            else nameCell.classList.remove('line-through', 'text-red-600');
+                        }
+                    };
                     
                     let total = 0;
                     let hasValue = false;
@@ -2869,14 +2884,14 @@
                                         resultCell.textContent = 'ជាប់';
                                         resultCell.className = 'border border-black px-2 py-1.5 text-center font-bold text-green-600';
                                     }
-                                    if (nameSpan) nameSpan.classList.remove('failed-candidate-strike', 'line-through', 'text-red-600');
+                                    updateRowStrike(false);
                                 } else {
                                     if (currentCandidate) currentCandidate.passed = false;
                                     if (resultCell) {
                                         resultCell.textContent = 'ធ្លាក់';
                                         resultCell.className = 'border border-black px-2 py-1.5 text-center font-bold text-red-600';
                                     }
-                                    if (nameSpan) nameSpan.classList.add('failed-candidate-strike');
+                                    updateRowStrike(true);
                                 }
                             } else {
                                 if (total >= 427) mention = 'A';
@@ -2892,14 +2907,14 @@
                                         resultCell.textContent = 'ជាប់';
                                         resultCell.className = 'border border-black px-2 py-1.5 text-center font-bold text-green-600';
                                     }
-                                    if (nameSpan) nameSpan.classList.remove('failed-candidate-strike', 'line-through', 'text-red-600');
+                                    updateRowStrike(false);
                                 } else {
                                     if (currentCandidate) currentCandidate.passed = false;
                                     if (resultCell) {
                                         resultCell.textContent = 'ធ្លាក់';
                                         resultCell.className = 'border border-black px-2 py-1.5 text-center font-bold text-red-600';
                                     }
-                                    if (nameSpan) nameSpan.classList.add('failed-candidate-strike');
+                                    updateRowStrike(true);
                                 }
                             }
                         }
@@ -2916,8 +2931,7 @@
                                 resultCell.classList.add('text-green-600', 'font-bold');
                                 resultCell.classList.remove('text-red-600');
                             }
-                            if (nameSpan) nameSpan.classList.remove('failed-candidate-strike', 'line-through', 'text-red-600');
-                            if (nameCell) nameCell.classList.remove('line-through', 'text-red-600');
+                            updateRowStrike(false);
                             if (mentionCell) {
                                 mentionCell.textContent = currentCandidate ? currentCandidate.mention : '';
                                 const m = currentCandidate ? currentCandidate.mention : '';
@@ -2931,7 +2945,7 @@
                                 resultCell.classList.add('text-red-600', 'font-bold');
                                 resultCell.classList.remove('text-green-600');
                             }
-                            if (nameSpan) nameSpan.classList.add('failed-candidate-strike');
+                            updateRowStrike(true);
                             if (mentionCell) {
                                 mentionCell.textContent = currentCandidate ? currentCandidate.mention : '';
                                 const m = currentCandidate ? currentCandidate.mention : '';
@@ -2947,8 +2961,7 @@
                         totalCell.textContent = '';
                         resultCell.textContent = '';
                         mentionCell.textContent = '';
-                        if (nameSpan) nameSpan.classList.remove('failed-candidate-strike', 'line-through', 'text-red-600');
-                        if (nameCell) nameCell.classList.remove('line-through', 'text-red-600');
+                        updateRowStrike(false);
                     }
                     // Auto-save the score silently
                     saveCandidates(true);
