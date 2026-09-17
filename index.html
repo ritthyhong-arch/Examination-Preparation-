@@ -86,13 +86,25 @@
             #scorePrintablePaper table {
                 width: 100% !important;
                 margin-bottom: 0 !important;
+                table-layout: auto !important;
             }
-            #scorePrintablePaper table th,
+            #scorePrintablePaper table th {
+                font-family: 'Hanuman', sans-serif !important;
+                font-weight: 500 !important;
+                white-space: nowrap !important;
+                padding-top: 0.2rem !important;
+                padding-bottom: 0.2rem !important;
+                padding-left: 0.35rem !important;
+                padding-right: 0.35rem !important;
+                font-size: 12.5px !important;
+                line-height: 1.3 !important;
+            }
             #scorePrintablePaper table td {
                 padding-top: 0.12rem !important;
                 padding-bottom: 0.12rem !important;
                 font-size: 12px !important;
                 line-height: 1.25 !important;
+                white-space: nowrap !important;
             }
             
             /* Squeeze the vertical spaces of Tailwind classes for printing */
@@ -157,6 +169,16 @@
             }
         }
         
+        /* Results Score Table Headers: No bold, Hanuman font, whitespace nowrap */
+        #scorePrintablePaper table th {
+            font-family: 'Hanuman', sans-serif !important;
+            font-weight: 500 !important;
+            white-space: nowrap !important;
+        }
+        #scorePrintablePaper table td {
+            white-space: nowrap;
+        }
+
         /* User Access Control: Hide Admin Only controls in User Mode */
         body.role-user .admin-only {
             display: none !important;
@@ -766,23 +788,23 @@
                                 <!-- Score Table -->
                                 <table class="w-full border-collapse border border-black text-[13px]">
                                     <thead>
-                                        <tr class="text-center font-moul bg-gray-50">
-                                            <th class="border border-black px-1 py-2 font-moul text-[12px] w-10">ល.រ</th>
-                                            <th class="border border-black px-1 py-2 font-moul text-[12px] w-16">លេខតុ</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">គោត្តនាម-នាម</th>
-                                            <th class="border border-black px-1 py-2 font-moul text-[12px] w-12">ថ្នាក់ទី</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">សាខា</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]" style="background-color: #fef08a;">ឯកទេស</th>
-                                            <th id="th-sco-s1" class="border border-black px-1 py-2 font-moul text-[11px] w-14" style="background-color: #bae6fd;">គណិតវិទ្យា</th>
-                                            <th id="th-sco-s2" class="border border-black px-1 py-2 font-moul text-[11px] w-14" style="background-color: #e5e7eb;">អក្សរសាស្រ្តខ្មែរ</th>
-                                            <th id="th-sco-s3" class="border border-black px-1 py-2 font-moul text-[11px] w-14" style="background-color: #bae6fd;">ប្រវត្តិវិទ្យា</th>
-                                            <th id="th-sco-s4" class="border border-black px-1 py-2 font-moul text-[11px] w-14" style="background-color: #e5e7eb;">គីមីវិទ្យា</th>
-                                            <th id="th-sco-s5" class="border border-black px-1 py-2 font-moul text-[11px] w-14" style="background-color: #bae6fd;">រូបវិទ្យា</th>
-                                            <th id="th-sco-s6" class="border border-black px-1 py-2 font-moul text-[11px] w-14" style="background-color: #e5e7eb;">ជីវវិទ្យា</th>
-                                            <th id="th-sco-s7" class="border border-black px-1 py-2 font-moul text-[11px] w-14" style="background-color: #bae6fd;">ភាសាបរទេស</th>
-                                            <th class="border border-black px-2 py-2 text-white font-moul text-[12px] w-20" style="background-color: #2563eb;">ពិន្ទុសរុប</th>
-                                            <th class="border border-black px-2 py-2 text-white font-moul text-[12px] w-20" style="background-color: #22c55e;">លទ្ធផល</th>
-                                            <th id="th-sco-mention" class="border border-black px-2 py-2 text-white font-moul text-[12px] w-16" style="background-color: #a855f7;">និទ្ទេស</th>
+                                        <tr class="text-center bg-gray-50 text-black font-normal">
+                                            <th class="border border-black px-1.5 py-2 font-normal text-[13px] whitespace-nowrap">ល.រ</th>
+                                            <th class="border border-black px-2 py-2 font-normal text-[13px] whitespace-nowrap">លេខតុ</th>
+                                            <th class="border border-black px-3 py-2 font-normal text-[13px] whitespace-nowrap">គោត្តនាម-នាម</th>
+                                            <th class="border border-black px-2 py-2 font-normal text-[13px] whitespace-nowrap">ថ្នាក់ទី</th>
+                                            <th class="border border-black px-3 py-2 font-normal text-[13px] whitespace-nowrap">សាខា</th>
+                                            <th class="border border-black px-3 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #fef08a;">ឯកទេស</th>
+                                            <th id="th-sco-s1" class="border border-black px-2.5 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #bae6fd;">គណិតវិទ្យា</th>
+                                            <th id="th-sco-s2" class="border border-black px-3.5 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #e5e7eb;">អក្សរសាស្រ្តខ្មែរ</th>
+                                            <th id="th-sco-s3" class="border border-black px-2.5 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #bae6fd;">ប្រវត្តិវិទ្យា</th>
+                                            <th id="th-sco-s4" class="border border-black px-2.5 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #e5e7eb;">គីមីវិទ្យា</th>
+                                            <th id="th-sco-s5" class="border border-black px-2.5 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #bae6fd;">រូបវិទ្យា</th>
+                                            <th id="th-sco-s6" class="border border-black px-2.5 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #e5e7eb;">ជីវវិទ្យា</th>
+                                            <th id="th-sco-s7" class="border border-black px-2.5 py-2 font-normal text-[13px] whitespace-nowrap" style="background-color: #bae6fd;">ភាសាបរទេស</th>
+                                            <th class="border border-black px-3 py-2 text-white font-normal text-[13px] whitespace-nowrap" style="background-color: #2563eb;">ពិន្ទុសរុប</th>
+                                            <th class="border border-black px-3 py-2 text-white font-normal text-[13px] whitespace-nowrap" style="background-color: #22c55e;">លទ្ធផល</th>
+                                            <th id="th-sco-mention" class="border border-black px-2.5 py-2 text-white font-normal text-[13px] whitespace-nowrap" style="background-color: #a855f7;">និទ្ទេស</th>
                                         </tr>
                                     </thead>
                                     <tbody id="scoreTableBody">
@@ -2774,21 +2796,21 @@
                     <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap"><span class="failed-candidate-target ${strikeClass}">${c.school}</span></td>
                     <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap" style="background-color: #fef08a;"><span class="failed-candidate-target ${strikeClass}">${c.subject}</span></td>
                     ${currentExamKey === 'outstanding' ? `
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="100" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="100" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
                     <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap" style="background-color: #f3f4f6;">វប្បធម៌ទូទៅ</td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="100" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="100" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
                     ` : `
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[0]}" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[1]}" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="2" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[2]}" value="${c.score3 !== undefined ? c.score3 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="3" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[3]}" value="${c.score4 !== undefined ? c.score4 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="4" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[4]}" value="${c.score5 !== undefined ? c.score5 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="5" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[5]}" value="${c.score6 !== undefined ? c.score6 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="6" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[6]}" value="${c.score7 !== undefined ? c.score7 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[0]}" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[1]}" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="2" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[2]}" value="${c.score3 !== undefined ? c.score3 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="3" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[3]}" value="${c.score4 !== undefined ? c.score4 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="4" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[4]}" value="${c.score5 !== undefined ? c.score5 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="5" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[5]}" value="${c.score6 !== undefined ? c.score6 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="6" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[6]}" value="${c.score7 !== undefined ? c.score7 : ''}"></td>
                     `}
-                    <td class="border border-black px-2 py-1.5 text-center font-bold text-blue-800">${c.total !== undefined && !isNaN(c.total) ? c.total : ''}</td>
-                    <td class="border border-black px-2 py-1.5 text-center font-bold ${c.passed ? 'text-green-600' : (c.passed === false ? 'text-red-600' : '')}">${c.passed ? 'ជាប់' : (c.passed === false ? 'ធ្លាក់' : '')}</td>
-                    ${currentExamKey !== 'outstanding' ? `<td class="border border-black px-2 py-1.5 text-center font-bold ${mColor}">${c.mention || ''}</td>` : ''}
+                    <td class="border border-black px-2 py-1.5 text-center font-semibold text-blue-800">${c.total !== undefined && !isNaN(c.total) ? c.total : ''}</td>
+                    <td class="border border-black px-2 py-1.5 text-center font-semibold ${c.passed ? 'text-green-600' : (c.passed === false ? 'text-red-600' : '')}">${c.passed ? 'ជាប់' : (c.passed === false ? 'ធ្លាក់' : '')}</td>
+                    ${currentExamKey !== 'outstanding' ? `<td class="border border-black px-2 py-1.5 text-center font-semibold ${mColor}">${c.mention || ''}</td>` : ''}
                 `;
                 tbody.appendChild(tr);
             });
