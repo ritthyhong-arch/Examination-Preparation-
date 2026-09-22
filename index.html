@@ -3156,14 +3156,24 @@
                 saveCandidates(true);
             }
             const scoreRoomEl = document.getElementById('scoreRoomNumber');
-            if (scoreRoomEl) scoreRoomEl.textContent = roomNumber;
+            if (scoreRoomEl) scoreRoomEl.textContent = roomNumber === 'all' ? 'ទាំងអស់' : roomNumber;
             renderScoreTableForRoom(roomNumber);
-            showToast(`កំពុងបើកទម្រង់ពិន្ទុសម្រាប់: បន្ទប់លេខ ${roomNumber}`, 'info');
+            const msg = roomNumber === 'all' ? 'គ្រប់បន្ទប់ទាំងអស់' : `បន្ទប់លេខ ${roomNumber}`;
+            showToast(`កំពុងបើកទម្រង់ពិន្ទុសម្រាប់: ${msg}`, 'info');
         }
 
         function renderScoreTableForRoom(roomNumber) {
             const tbody = document.getElementById('scoreTableBody');
-            const filtered = mockCandidates.filter(c => c.room === roomNumber);
+            let filtered = roomNumber === 'all' ? [...mockCandidates] : mockCandidates.filter(c => c.room === roomNumber);
+            
+            // Sort by seat number if 'all' is selected to ensure 1 to N ordering
+            if (roomNumber === 'all') {
+                filtered.sort((a, b) => {
+                    const seatA = parseInt(String(a.seat).replace(/\D/g, ''), 10) || 0;
+                    const seatB = parseInt(String(b.seat).replace(/\D/g, ''), 10) || 0;
+                    return seatA - seatB;
+                });
+            }
             
             tbody.innerHTML = '';
             
