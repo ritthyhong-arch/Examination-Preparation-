@@ -915,6 +915,7 @@
                                     </div>
                                     <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="showScoreInput()"><i class="fas fa-arrow-left mr-1"></i> ត្រឡប់ទៅបញ្ចូលពិន្ទុ</button>
                                     <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="printTop3()"><i class="fas fa-print mr-1"></i> Print (A4)</button>
+                                    <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="exportTop3ToExcel()"><i class="fas fa-file-excel mr-1 text-green-600"></i> ទាញយក Excel</button>
                                 </div>
                             </div>
 
@@ -3588,6 +3589,114 @@
                 tbody.appendChild(tr);
             });
             setAutoDates();
+        }
+
+        function exportTop3ToExcel() {
+            const subjectSelect = document.getElementById('top3SubjectFilter');
+            const subject = subjectSelect ? subjectSelect.value : '';
+            if (!subject) {
+                showToast('សូមជ្រើសរើសមុខវិជ្ជាជាមុនសិន', 'warning');
+                return;
+            }
+
+            // Filter out those who passed in the specified subject
+            let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
+            
+            // Group by grade
+            let candidatesByGrade = {};
+            passedCandidates.forEach(c => {
+                let g = extractGradeNumber(c.grade);
+                if (!candidatesByGrade[g]) candidatesByGrade[g] = [];
+                candidatesByGrade[g].push(c);
+            });
+            
+            // Sort grades
+            let sortedGrades = Object.keys(candidatesByGrade).map(Number).sort((a, b) => a - b);
+            
+            let finalTop3 = [];
+            sortedGrades.forEach(g => {
+                let gradeCandidates = candidatesByGrade[g];
+                // Sort descending by total score
+                gradeCandidates.sort((a, b) => b.total - a.total);
+                // Get top 3 for this grade
+                let top3 = gradeCandidates.slice(0, 3);
+                top3.forEach((c, idx) => {
+                    finalTop3.push({ candidate: c, rank: idx + 1 });
+                });
+            });
+
+            if (finalTop3.length === 0) {
+                showToast('មិនមានទិន្នន័យជ័យលាភីសម្រាប់ទាញយកទេ', 'error');
+                return;
+            }
+
+            const top3Total = finalTop3.length;
+            const top3Females = finalTop3.filter(item => item.candidate && (item.candidate.gender === 'F' || item.candidate.gender === 'ស្រី')).length;
+
+            const lunarDateText = document.getElementById('top3LunarDateText')?.innerText?.trim() || '';
+            const solarDateText = document.getElementById('top3KhmerSolarDate')?.innerText?.trim() || '';
+
+            const wb = XLSX.utils.book_new();
+
+            let excelData = [
+                ['ព្រះរាជាណាចក្រកម្ពុជា'],
+                ['ជាតិ សាសនា ព្រះមហាក្សត្រ'],
+                ['មន្ទីរអប់រំ យុវជន និង កីឡារាជធានីភ្នំពេញ'],
+                ['សាលាបញ្ញាសាស្ត្រអន្តរជាតិ'],
+                [],
+                ['លទ្ធផលប្រឡងជ្រើសរើសសិស្សពូកែ'],
+                ['សម័យប្រឡង៖ ថ្ងៃទី២១ ខែ កញ្ញា ឆ្នាំ ២០២៦'],
+                [`មុខវិជ្ជា៖ ${subject}`],
+                [],
+                ['ល.រ', 'លេខតុ', 'គោត្តនាម-នាម', 'ភេទ', 'ថ្នាក់', 'ឯកទេស', 'សាខា', 'ចំណាត់ថ្នាក់']
+            ];
+
+            finalTop3.forEach((item, index) => {
+                const c = item.candidate;
+                let rankStr = '';
+                if (item.rank === 1) rankStr = 'លេខ ១';
+                else if (item.rank === 2) rankStr = 'លេខ ២';
+                else if (item.rank === 3) rankStr = 'លេខ ៣';
+
+                excelData.push([
+                    toKhmerNum(index + 1),
+                    toKhmerNum(c.seat),
+                    c.name || '',
+                    (c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស',
+                    toKhmerNum(extractGradeNumber(c.grade)),
+                    c.subject || '',
+                    c.school || '',
+                    rankStr
+                ]);
+            });
+
+            excelData.push([]);
+            excelData.push([`បញ្ជាក់៖ បញ្ជីនេះមានចំនួនបេក្ខជនសរុប៖ ${toKhmerNum(top3Total)} នាក់ ស្រី ${toKhmerNum(top3Females)} នាក់`]);
+            excelData.push([]);
+            excelData.push(['ហត្ថលេខា និងឈ្មោះអ្នកចុះជាប់ធ្នាក់ចុងក្រោយ', '', '', '', '', lunarDateText]);
+            excelData.push(['', '', '', '', '', `រាជធានីភ្នំពេញ ${solarDateText}`]);
+            excelData.push(['', '', '', '', '', 'នាយកសាលា']);
+
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+            // Adjust column widths
+            ws['!cols'] = [
+                { wch: 8 },  // ល.រ
+                { wch: 12 }, // លេខតុ
+                { wch: 25 }, // គោត្តនាម-នាម
+                { wch: 10 }, // ភេទ
+                { wch: 10 }, // ថ្នាក់
+                { wch: 20 }, // ឯកទេស
+                { wch: 25 }, // សាខា
+                { wch: 15 }  // ចំណាត់ថ្នាក់
+            ];
+
+            let cleanSheetName = `Top3_${subject}`.replace(/[\\/*?:[\]]/g, '');
+            if (cleanSheetName.length > 31) cleanSheetName = cleanSheetName.substring(0, 31);
+
+            XLSX.utils.book_append_sheet(wb, ws, cleanSheetName);
+            XLSX.writeFile(wb, `បញ្ជីជ័យលាភី_Top3_${subject}.xlsx`);
+            showToast('ទាញយក Excel ជោគជ័យ!', 'success');
         }
 
         // --- DASHBOARD LOGIC ---
