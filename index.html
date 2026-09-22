@@ -138,65 +138,69 @@
                 max-width: 100% !important;
                 min-height: auto !important;
                 height: auto !important;
-                padding: 0 !important;
-                margin: 0 !important;
+                padding: 8mm 12mm 10mm 12mm !important;
+                margin: 0 auto !important;
+                box-sizing: border-box !important;
                 box-shadow: none !important;
                 border: none !important;
                 page-break-after: avoid !important;
                 page-break-inside: avoid !important;
             }
             #printableTop3Paper table {
-                margin-bottom: 4px !important;
+                margin-top: 6px !important;
+                margin-bottom: 6px !important;
                 page-break-inside: avoid !important;
             }
             #printableTop3Paper table th, 
             #printableTop3Paper table td {
-                padding-top: 2.5px !important;
-                padding-bottom: 2.5px !important;
-                padding-left: 4px !important;
-                padding-right: 4px !important;
+                padding-top: 3.5px !important;
+                padding-bottom: 3.5px !important;
+                padding-left: 5px !important;
+                padding-right: 5px !important;
                 font-size: 12px !important;
                 font-weight: normal !important;
-                line-height: 1.25 !important;
+                line-height: 1.35 !important;
             }
             #printableTop3Paper table th {
                 font-family: 'Moul', cursive !important;
-                font-size: 12px !important;
+                font-size: 11.5px !important;
                 font-weight: normal !important;
                 background-color: #f3f4f6 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             #printableTop3Paper h2#printTitleTop3 {
-                font-size: 14px !important;
-                margin-bottom: 2px !important;
+                font-size: 15.5px !important;
+                margin-bottom: 3px !important;
             }
             #printableTop3Paper h3 {
-                font-size: 12px !important;
+                font-size: 12.5px !important;
             }
             #printableTop3Paper .font-moul {
                 font-family: 'Moul', cursive !important;
             }
             #printableTop3Paper .text-\[13px\] {
-                font-size: 11px !important;
-            }
-            #printableTop3Paper .text-\[14px\] {
                 font-size: 12px !important;
             }
+            #printableTop3Paper .text-\[14px\] {
+                font-size: 12.5px !important;
+            }
             #printableTop3Paper .text-\[15px\] {
-                font-size: 13px !important;
+                font-size: 13.5px !important;
             }
             #printableTop3Paper .text-\[17px\] {
-                font-size: 14px !important;
-            }
-            #printableTop3Paper .pb-14 {
-                padding-bottom: 3.5rem !important;
+                font-size: 15.5px !important;
             }
             #printableTop3Paper .top3-confirmation {
-                margin-top: 4mm !important;
+                margin-top: 6mm !important;
+                font-size: 12px !important;
             }
             #printableTop3Paper .top3-signatures {
-                margin-top: 6mm !important;
+                margin-top: 8mm !important;
+                font-size: 12px !important;
+            }
+            #printableTop3Paper .top3-sign-space {
+                height: 55px !important;
             }
         }
         /* Remove arrows/spinners from number inputs */
@@ -957,18 +961,20 @@
                                 </table>
 
                                 <!-- Footer Section (Exact Match to User Attachment) -->
-                                <div class="top3-confirmation text-black text-[13px] leading-relaxed break-inside-avoid" style="margin-top: 4mm !important;">
+                                <div class="top3-confirmation text-black text-[13px] leading-relaxed break-inside-avoid" style="margin-top: 6mm !important;">
                                     <div class="mb-2">
                                         <p>បញ្ជាក់៖បញ្ជីនេះមានចំនួនបេក្ខជនសរុប៖ <span id="top3TotalCandidates" class="font-normal px-1 inline-block min-w-[28px] text-center">...</span> នាក់ ស្រី <span id="top3FemaleCandidates" class="font-normal px-1 inline-block min-w-[28px] text-center">...</span> នាក់</p>
                                     </div>
-                                    <div class="top3-signatures flex justify-between items-start" style="margin-top: 6mm !important;">
-                                        <div class="text-center">
+                                    <div class="top3-signatures flex justify-between items-start" style="margin-top: 8mm !important;">
+                                        <div class="text-center min-w-[240px]">
                                             <p class="font-normal text-[13px] cursor-pointer hover:bg-yellow-50 rounded px-1 transition" title="ចុចដើម្បីកែប្រែប្រសិនបើចាំបាច់" contenteditable="true">ហត្ថលេខា និងឈ្មោះអ្នកចុះជាប់ធ្នាក់ចុងក្រោយ</p>
+                                            <div class="top3-sign-space" style="height: 60px;"></div>
                                         </div>
-                                        <div class="text-center">
+                                        <div class="text-center min-w-[260px]">
                                             <p id="top3LunarDateText" class="text-[13px] whitespace-nowrap cursor-pointer hover:bg-yellow-50 rounded px-1 transition" title="ចុចដើម្បីកែប្រែកាលបរិច្ឆេទប្រសិនបើចាំបាច់" contenteditable="true">ថ្ងៃ...</p>
                                             <p class="mt-0.5 text-[13px] whitespace-nowrap">រាជធានីភ្នំពេញ <span id="top3KhmerSolarDate" class="cursor-pointer hover:bg-yellow-50 rounded px-1 transition" title="ចុចដើម្បីកែប្រែកាលបរិច្ឆេទប្រសិនបើចាំបាច់" contenteditable="true">ថ្ងៃទី... ខែ... ឆ្នាំ...</span></p>
-                                            <p class="font-moul text-[15px] mt-2 pb-14">នាយកសាលា</p>
+                                            <p class="font-moul text-[15px] mt-2">នាយកសាលា</p>
+                                            <div class="top3-sign-space" style="height: 60px;"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -2786,7 +2792,7 @@
             if (orientation === 'landscape') {
                 styleEl.innerHTML = `@page { size: A4 landscape !important; margin: 5mm !important; }`;
             } else {
-                styleEl.innerHTML = `@page { size: A4 portrait !important; margin: 6mm 8mm !important; }`;
+                styleEl.innerHTML = `@page { size: A4 portrait !important; margin: 0 !important; }`;
             }
         }
 
