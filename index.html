@@ -3561,10 +3561,13 @@
             }
         }
 
-        function getTop3Candidates(subject) {
+        function getTop3Candidates(subject, branchFilter = 'all') {
             if (!subject) return [];
             // Filter out those who passed in the specified subject
             let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
+            if (branchFilter !== 'all') {
+                passedCandidates = passedCandidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
+            }
             
             // Group by grade
             let candidatesByGrade = {};
@@ -3770,13 +3773,10 @@
             let subjectCounts = {};
             
             allSubjects.forEach(sub => {
-                let winners = getTop3Candidates(sub);
-                // Apply branch and subject filters to the winners if needed
+                let winners = getTop3Candidates(sub, branchFilter);
+                // Apply subject filter to the winners if needed
                 if (subjectFilter !== 'all') {
                     winners = winners.filter(c => String(c.subject || '').trim() === subjectFilter);
-                }
-                if (branchFilter !== 'all') {
-                    winners = winners.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
                 }
                 
                 if (winners.length > 0) {
