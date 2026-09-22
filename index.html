@@ -3563,8 +3563,8 @@
 
         function getTop3Candidates(subject, branchFilter = 'all') {
             if (!subject) return [];
-            // Filter out candidates in the specified subject
-            let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject);
+            // Filter out candidates in the specified subject who passed
+            let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
             if (branchFilter !== 'all') {
                 passedCandidates = passedCandidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
             }
