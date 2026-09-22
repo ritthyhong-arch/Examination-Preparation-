@@ -3806,12 +3806,28 @@
                 }
             }
 
-            // 3. Prepare data for Bar Chart (by Branch/School)
+            // Prepare Bar Chart Data (Branches)
+            let allBranches = [...new Set(mockCandidates.map(c => String(c.school || 'ផ្សេងៗ').trim()))].filter(b => b !== '');
+            allBranches.sort((a,b) => a.localeCompare(b, 'km'));
+            
             let branchCounts = {};
+            if (branchFilter !== 'all') {
+                branchCounts[branchFilter] = 0;
+            } else {
+                allBranches.forEach(b => {
+                    branchCounts[b] = 0;
+                });
+            }
+            
             top3Candidates.forEach(c => {
-                let branch = String(c.school || 'ផ្សេងៗ').trim();
-                branchCounts[branch] = (branchCounts[branch] || 0) + 1;
+                let br = String(c.school || 'ផ្សេងៗ').trim();
+                if (branchCounts[br] !== undefined) {
+                    branchCounts[br]++;
+                } else {
+                    branchCounts[br] = 1;
+                }
             });
+            
             let branchLabels = Object.keys(branchCounts);
             let branchData = Object.values(branchCounts);
 
