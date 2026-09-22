@@ -3561,10 +3561,13 @@
             }
         }
 
-        function getTop3Candidates(subject) {
+        function getTop3Candidates(subject, branchFilter = 'all') {
             if (!subject) return [];
             // Filter out candidates in the specified subject who passed
             let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
+            if (branchFilter !== 'all') {
+                passedCandidates = passedCandidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
+            }
             
             // Filter out candidates without a valid total score
             passedCandidates = passedCandidates.filter(c => c.total !== undefined && c.total !== null);
@@ -3765,19 +3768,16 @@
             // 1. Gather all unique subjects from all candidates
             let allSubjects = [...new Set(mockCandidates.map(c => String(c.subject || '').trim()).filter(s => s))];
             
-            // 2. Fetch overall Top 3 for each subject
+            // 2. Fetch Top 3 for each subject (scoped by branchFilter)
             let overallTop3 = [];
             allSubjects.forEach(sub => {
-                overallTop3 = overallTop3.concat(getTop3Candidates(sub));
+                overallTop3 = overallTop3.concat(getTop3Candidates(sub, branchFilter));
             });
             
-            // 3. Apply Filters to the overall Top 3
+            // 3. Apply Subject Filter
             let top3Candidates = overallTop3;
             if (subjectFilter !== 'all') {
                 top3Candidates = top3Candidates.filter(c => String(c.subject || '').trim() === subjectFilter);
-            }
-            if (branchFilter !== 'all') {
-                top3Candidates = top3Candidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
             }
             
             // 4. Count subjects for pie chart
