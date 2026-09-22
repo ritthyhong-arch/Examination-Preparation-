@@ -1015,10 +1015,8 @@
                             <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-chart-line text-blue-500 mr-2"></i> Dashboard វិភាគទិន្នន័យ</h3>
                             <div class="flex gap-4">
                                 <div class="relative">
-                                    <select id="dashGradeFilter" onchange="updateDashboard()" class="appearance-none bg-white border border-gray-300 text-gray-700 font-medium py-2 pl-4 pr-10 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition cursor-pointer">
-                                        <option value="all">គ្រប់កម្រិតថ្នាក់</option>
-                                        <option value="៩">ថ្នាក់ទី ៩</option>
-                                        <option value="១២">ថ្នាក់ទី ១២</option>
+                                    <select id="dashSubjectFilter" onchange="updateDashboard()" class="appearance-none bg-white border border-gray-300 text-gray-700 font-medium py-2 pl-4 pr-10 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition cursor-pointer">
+                                        <option value="all">ជ្រើសរើសមុខវិជ្ជា</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                                         <i class="fas fa-filter text-xs"></i>
@@ -2598,21 +2596,12 @@
             if (selectScore) selectScore.innerHTML = optionsHTML + roomOptionsHTML;
             if (selectDashRoom) selectDashRoom.innerHTML = optionsHTML + roomOptionsHTML;
 
-            // Generate Dashboard and Top 3 dynamically
-            const selectDashGrade = document.getElementById('dashGradeFilter');
+            const selectDashSubject = document.getElementById('dashSubjectFilter');
             const selectTop3Subject = document.getElementById('top3SubjectFilter');
             
-            if (selectDashGrade) {
-                let uniqueGrades = [...new Set(mockCandidates.map(c => extractGradeNumber(c.grade)))].filter(g => g > 0).sort((a,b) => a-b);
-                let gradeHTML = '<option value="all">គ្រប់កម្រិតថ្នាក់</option>';
-                uniqueGrades.forEach(g => {
-                    gradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
-                });
-                selectDashGrade.innerHTML = gradeHTML;
-            }
-            
-            if (selectTop3Subject) {
+            if (selectDashSubject || selectTop3Subject) {
                 let uniqueSubjects = [...new Set(mockCandidates.map(c => String(c.subject || '').trim()))].filter(s => s !== '');
+                
                 // Sort subject array based on outstanding priorities (Khmer, Math, Physics)
                 let getOutSubjVal = (s) => {
                     let str = String(s || '').replace(/[​-‍﻿\s]/g, '');
@@ -2628,11 +2617,16 @@
                     return a.localeCompare(b, 'km');
                 });
                 
-                let top3SubjHTML = '';
+                let subjectHTML = '<option value="all">ជ្រើសរើសមុខវិជ្ជា</option>';
+                let top3SubjectHTML = '<option value="">ជ្រើសរើសមុខវិជ្ជា</option>';
                 uniqueSubjects.forEach(s => {
-                    top3SubjHTML += `<option value="${s}">${s}</option>`;
+                    subjectHTML += `<option value="${s}">${s}</option>`;
+                    top3SubjectHTML += `<option value="${s}">${s}</option>`;
                 });
-                selectTop3Subject.innerHTML = top3SubjHTML;
+                
+                if (selectDashSubject) selectDashSubject.innerHTML = subjectHTML;
+                if (selectTop3Subject) selectTop3Subject.innerHTML = top3SubjectHTML;
+            }
                 
                 // Pre-select first option for Top 3 if exists
                 if (uniqueSubjects.length > 0) {
@@ -3750,16 +3744,16 @@
         let myPieChart = null;
 
         function updateDashboard() {
-            const gradeFilterSelect = document.getElementById('dashGradeFilter');
+            const subjectFilterSelect = document.getElementById('dashSubjectFilter');
             const roomFilterSelect = document.getElementById('dashRoomFilter');
             
-            const gradeFilter = gradeFilterSelect.value;
-            const roomFilter = roomFilterSelect.value;
+            const subjectFilter = subjectFilterSelect ? subjectFilterSelect.value : 'all';
+            const roomFilter = roomFilterSelect ? roomFilterSelect.value : 'all';
 
             // 1. Gather all unique subjects based on filtered mockCandidates
             let filteredBase = mockCandidates;
-            if (gradeFilter !== 'all') {
-                filteredBase = filteredBase.filter(c => extractGradeNumber(c.grade) === parseInt(gradeFilter) || c.grade == gradeFilter);
+            if (subjectFilter !== 'all') {
+                filteredBase = filteredBase.filter(c => String(c.subject || '').trim() === subjectFilter);
             }
             if (roomFilter !== 'all') {
                 filteredBase = filteredBase.filter(c => c.room === roomFilter);
@@ -3773,16 +3767,18 @@
             
             allSubjects.forEach(sub => {
                 let winners = getTop3Candidates(sub);
-                // Apply grade and room filters to the winners if needed
-                if (gradeFilter !== 'all') {
-                    winners = winners.filter(c => extractGradeNumber(c.grade) === parseInt(gradeFilter) || c.grade == gradeFilter);
+                // Apply room and subject filters to the winners if needed
+                if (subjectFilter !== 'all') {
+                    winners = winners.filter(c => String(c.subject || '').trim() === subjectFilter);
                 }
                 if (roomFilter !== 'all') {
                     winners = winners.filter(c => c.room === roomFilter);
                 }
                 
-                subjectCounts[sub] = winners.length;
-                top3Candidates = top3Candidates.concat(winners);
+                if (winners.length > 0) {
+                    subjectCounts[sub] = winners.length;
+                    top3Candidates = top3Candidates.concat(winners);
+                }
             });
 
             // Update summary cards
@@ -3965,9 +3961,9 @@
                 let el = document.getElementById(id);
                 if (el) el.innerHTML = '<option value="all">មិនមានបន្ទប់</option>';
             });
-            ['dashGradeFilter'].forEach(id => {
+            ['dashSubjectFilter'].forEach(id => {
                 let el = document.getElementById(id);
-                if (el) el.innerHTML = '<option value="all">មិនមានថ្នាក់</option>';
+                if (el) el.innerHTML = '<option value="all">ជ្រើសរើសមុខវិជ្ជា</option>';
             });
             ['top3SubjectFilter'].forEach(id => {
                 let el = document.getElementById(id);
@@ -4025,22 +4021,51 @@
                 if (selectScore) selectScore.innerHTML = optionsHTML + roomOptionsHTML;
                 if (selectDashRoom) selectDashRoom.innerHTML = optionsHTML + roomOptionsHTML;
 
-                const selectDashGrade = document.getElementById('dashGradeFilter');
+                const selectDashSubject = document.getElementById('dashSubjectFilter');
+                const selectTop3Subject = document.getElementById('top3SubjectFilter');
+                
+                if (selectDashSubject || selectTop3Subject) {
+                    let uniqueSubjects = [...new Set(mockCandidates.map(c => String(c.subject || '').trim()))].filter(s => s !== '');
+                    let getOutSubjVal = (s) => {
+                        let str = String(s || '').replace(/[​-‍﻿\s]/g, '');
+                        if (str.includes('អក្សរ') || str.includes('ខ្មែរ')) return 1;
+                        if (str.includes('គណិត')) return 2;
+                        if (str.includes('រូប')) return 3;
+                        return 4;
+                    };
+                    uniqueSubjects.sort((a, b) => {
+                        let osA = getOutSubjVal(a);
+                        let osB = getOutSubjVal(b);
+                        if (osA !== osB) return osA - osB;
+                        return a.localeCompare(b, 'km');
+                    });
+                    
+                    let subjectHTML = '<option value="all">ជ្រើសរើសមុខវិជ្ជា</option>';
+                    let top3SubjectHTML = '<option value="">ជ្រើសរើសមុខវិជ្ជា</option>';
+                    uniqueSubjects.forEach(s => {
+                        subjectHTML += `<option value="${s}">${s}</option>`;
+                        top3SubjectHTML += `<option value="${s}">${s}</option>`;
+                    });
+                    
+                    if (selectDashSubject) selectDashSubject.innerHTML = subjectHTML;
+                    if (selectTop3Subject) {
+                        selectTop3Subject.innerHTML = top3SubjectHTML;
+                        if (uniqueSubjects.length > 0) {
+                            selectTop3Subject.value = uniqueSubjects[0];
+                        }
+                    }
+                }
+                
                 const selectTop3Grade = document.getElementById('top3GradeFilter');
-                if (selectDashGrade || selectTop3Grade) {
+                if (selectTop3Grade) {
                     let uniqueGrades = [...new Set(mockCandidates.map(c => extractGradeNumber(c.grade)))].filter(g => g > 0).sort((a,b) => a-b);
-                    let gradeHTML = '<option value="all">គ្រប់កម្រិតថ្នាក់</option>';
                     let top3GradeHTML = '';
                     uniqueGrades.forEach(g => {
-                        gradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
                         top3GradeHTML += `<option value="${g}">ថ្នាក់ទី ${toKhmerNum(g)}</option>`;
                     });
-                    if (selectDashGrade) selectDashGrade.innerHTML = gradeHTML;
-                    if (selectTop3Grade) {
-                        selectTop3Grade.innerHTML = top3GradeHTML;
-                        if (uniqueGrades.length > 0) {
-                            selectTop3Grade.value = uniqueGrades[0];
-                        }
+                    selectTop3Grade.innerHTML = top3GradeHTML;
+                    if (uniqueGrades.length > 0) {
+                        selectTop3Grade.value = uniqueGrades[0];
                     }
                 }
                 
