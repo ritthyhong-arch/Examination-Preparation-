@@ -3847,6 +3847,11 @@
                 },
                 options: {
                     responsive: true,
+                    layout: {
+                        padding: {
+                            top: 25
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -3854,7 +3859,26 @@
                         }
                     },
                     plugins: { legend: { display: false } }
-                }
+                },
+                plugins: [{
+                    id: 'barTopLabels',
+                    afterDatasetsDraw(chart, args, pluginOptions) {
+                        const { ctx } = chart;
+                        ctx.save();
+                        chart.data.datasets.forEach((dataset, i) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((element, index) => {
+                                const data = dataset.data[index];
+                                ctx.fillStyle = '#1f2937';
+                                ctx.font = 'bold 14px "Khmer OS Siemreap", sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'bottom';
+                                ctx.fillText(data, element.x, element.y - 5);
+                            });
+                        });
+                        ctx.restore();
+                    }
+                }]
             });
 
             // 4. Prepare data for Pie Chart (by Subject)
@@ -3881,7 +3905,29 @@
                     plugins: {
                         legend: { position: 'bottom' }
                     }
-                }
+                },
+                plugins: [{
+                    id: 'pieSliceLabels',
+                    afterDatasetsDraw(chart, args, pluginOptions) {
+                        const { ctx } = chart;
+                        ctx.save();
+                        chart.data.datasets.forEach((dataset, i) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((element, index) => {
+                                const data = dataset.data[index];
+                                if (data > 0) {
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.font = 'bold 14px "Khmer OS Siemreap", sans-serif';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    const position = element.tooltipPosition();
+                                    ctx.fillText(data, position.x, position.y);
+                                }
+                            });
+                        });
+                        ctx.restore();
+                    }
+                }]
             });
         }
 
