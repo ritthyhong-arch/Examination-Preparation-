@@ -3774,16 +3774,16 @@
             // 3. Apply Filters to the overall Top 3
             let top3Candidates = overallTop3;
             if (subjectFilter !== 'all') {
-                top3Candidates = top3Candidates.filter(c => String(c.subject || '').trim() === subjectFilter);
+                top3Candidates = top3Candidates.filter(c => String(c.candidate.subject || '').trim() === subjectFilter);
             }
             if (branchFilter !== 'all') {
-                top3Candidates = top3Candidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
+                top3Candidates = top3Candidates.filter(c => String(c.candidate.school || 'ផ្សេងៗ').trim() === branchFilter);
             }
             
             // 4. Count subjects for pie chart
             let subjectCounts = {};
             top3Candidates.forEach(c => {
-                let sub = String(c.subject || '').trim();
+                let sub = String(c.candidate.subject || '').trim();
                 subjectCounts[sub] = (subjectCounts[sub] || 0) + 1;
             });
 
@@ -3820,7 +3820,7 @@
             }
             
             top3Candidates.forEach(c => {
-                let br = String(c.school || 'ផ្សេងៗ').trim();
+                let br = String(c.candidate.school || 'ផ្សេងៗ').trim();
                 if (branchCounts[br] !== undefined) {
                     branchCounts[br]++;
                 } else {
