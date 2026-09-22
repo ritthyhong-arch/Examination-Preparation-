@@ -125,12 +125,71 @@
                 font-size: 13px !important; 
                 line-height: 1.3 !important;
             }
-            .text-\[12px\] { font-size: 13px !important; }
-            .text-\[13px\] { font-size: 14px !important; }
+            .text-[12px] { font-size: 13px !important; }
+            .text-[13px] { font-size: 14px !important; }
             .text-sm { font-size: 14px !important; }
-            .text-\[15px\] { font-size: 15px !important; }
-            .text-\[16px\] { font-size: 16px !important; }
-            .text-\[17px\] { font-size: 17px !important; }
+            .text-[15px] { font-size: 15px !important; }
+            .text-[16px] { font-size: 16px !important; }
+            .text-[17px] { font-size: 17px !important; }
+
+            /* Printable Top 3 Specific Print Styles - Guaranteed 1 Page on A4 Portrait */
+            #printableTop3Paper {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+                height: auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            #printableTop3Paper table {
+                margin-bottom: 4px !important;
+                page-break-inside: avoid !important;
+            }
+            #printableTop3Paper table th, 
+            #printableTop3Paper table td {
+                padding-top: 2.5px !important;
+                padding-bottom: 2.5px !important;
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+                font-size: 11px !important;
+                line-height: 1.25 !important;
+            }
+            #printableTop3Paper table th {
+                font-family: 'Moul', cursive !important;
+                font-size: 10.5px !important;
+                background-color: #f3f4f6 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            #printableTop3Paper h2#printTitleTop3 {
+                font-size: 14px !important;
+                margin-bottom: 2px !important;
+            }
+            #printableTop3Paper h3 {
+                font-size: 12px !important;
+            }
+            #printableTop3Paper .font-moul {
+                font-family: 'Moul', cursive !important;
+            }
+            #printableTop3Paper .text-\[13px\] {
+                font-size: 11px !important;
+            }
+            #printableTop3Paper .text-\[14px\] {
+                font-size: 12px !important;
+            }
+            #printableTop3Paper .text-\[15px\] {
+                font-size: 13px !important;
+            }
+            #printableTop3Paper .text-\[17px\] {
+                font-size: 14px !important;
+            }
+            #printableTop3Paper .pb-14 {
+                padding-bottom: 3.5rem !important;
+            }
         }
         /* Remove arrows/spinners from number inputs */
         input[type=number]::-webkit-outer-spin-button,
@@ -833,45 +892,45 @@
                                         </div>
                                     </div>
                                     <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="showScoreInput()"><i class="fas fa-arrow-left mr-1"></i> ត្រឡប់ទៅបញ្ចូលពិន្ទុ</button>
-                                    <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="window.print()"><i class="fas fa-print mr-1"></i> Print (A4)</button>
+                                    <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="printTop3()"><i class="fas fa-print mr-1"></i> Print (A4)</button>
                                 </div>
                             </div>
 
                             <!-- Printable A4 Top 3 -->
-                            <div class="bg-white shadow-xl mx-auto px-12 pt-12 pb-16 border border-gray-200 text-black overflow-hidden relative" style="width: 210mm; min-height: 297mm;" id="printableTop3Paper">
+                            <div class="bg-white shadow-xl mx-auto px-8 pt-6 pb-8 border border-gray-200 text-black overflow-hidden" style="width: 210mm; max-width: 100%; box-sizing: border-box;" id="printableTop3Paper">
                                 <!-- Top Header Section -->
-                                <div class="relative mb-6 text-black">
+                                <div class="relative mb-3 text-black">
                                     <!-- Kingdom Header -->
                                     <div class="absolute top-0 right-0 text-center font-moul">
-                                        <p class="text-[17px] mb-1">ព្រះរាជាណាចក្រកម្ពុជា</p>
-                                        <p class="text-[16px]">ជាតិ សាសនា ព្រះមហាក្សត្រ</p>
+                                        <p class="text-[15px] mb-0.5">ព្រះរាជាណាចក្រកម្ពុជា</p>
+                                        <p class="text-[14px]">ជាតិ សាសនា ព្រះមហាក្សត្រ</p>
                                     </div>
                                     <!-- Ministry Header -->
-                                    <div class="pt-12 text-left font-moul text-[15px]">
+                                    <div class="pt-4 text-left font-moul text-[14px]">
                                         <p>មន្ទីរអប់រំ យុវជន និង កីឡារាជធានីភ្នំពេញ</p>
                                         <p>សាលាបញ្ញាសាស្ត្រអន្តរជាតិ</p>
                                     </div>
                                 </div>
 
                                 <!-- Center Title -->
-                                <div class="text-center mb-8 text-black font-moul mt-6">
-                                    <h2 id="printTitleTop3" class="text-[18px] mb-2">លទ្ធផលប្រឡងជ្រើសរើសសិស្សពូកែ</h2>
-                                    <h3 class="text-[16px]">សម័យប្រឡង៖ ថ្ងៃទី២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</h3>
-                                    <h3 class="text-[16px] mt-2 text-blue-800">មុខវិជ្ជា៖ <span id="top3SubjectLabel"></span></h3>
+                                <div class="text-center mb-3 text-black font-moul mt-2">
+                                    <h2 id="printTitleTop3" class="text-[17px] mb-1">លទ្ធផលប្រឡងជ្រើសរើសសិស្សពូកែ</h2>
+                                    <h3 class="text-[14px]">សម័យប្រឡង៖ ថ្ងៃទី២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</h3>
+                                    <h3 class="text-[14px] mt-1 text-blue-800">មុខវិជ្ជា៖ <span id="top3SubjectLabel"></span></h3>
                                 </div>
 
                                 <!-- Table -->
-                                <table class="w-full border-collapse border border-black text-[13px] mb-8">
+                                <table class="w-full border-collapse border border-black text-[12px] mb-3">
                                     <thead>
                                         <tr class="text-center font-moul bg-gray-50">
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">ល.រ</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">លេខតុ</th>
-                                            <th class="border border-black px-3 py-2 font-moul text-[12px]">គោត្តនាម-នាម</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">ភេទ</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">ថ្នាក់</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">ឯកទេស</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">សាខា</th>
-                                            <th class="border border-black px-2 py-2 font-moul text-[12px]">ចំណាត់ថ្នាក់</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">ល.រ</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">លេខតុ</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">គោត្តនាម-នាម</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">ភេទ</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">ថ្នាក់</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">ឯកទេស</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">សាខា</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">ចំណាត់ថ្នាក់</th>
                                         </tr>
                                     </thead>
                                     <tbody id="top3TableBody">
@@ -879,10 +938,21 @@
                                     </tbody>
                                 </table>
 
-                                <!-- Signatures -->
-                                <div class="absolute bottom-16 right-16 text-center text-black">
-                                    <p class="mb-1">រាជធានីភ្នំពេញ <span id="top3KhmerSolarDate">ថ្ងៃទី....... ខែ............... ឆ្នាំ២០២...</span></p>
-                                    <p class="font-moul text-[16px] mb-24 mt-2">ប្រធានមណ្ឌល</p>
+                                <!-- Footer Section (Exact Match to User Attachment) -->
+                                <div class="mt-2 text-black text-[13px] leading-relaxed break-inside-avoid">
+                                    <div class="mb-2">
+                                        <p>បញ្ជាក់៖បញ្ជីនេះមានចំនួនបេក្ខជនសរុប៖ <span id="top3TotalCandidates" class="font-bold px-1 inline-block min-w-[28px] text-center">...</span> នាក់ ស្រី <span id="top3FemaleCandidates" class="font-bold px-1 inline-block min-w-[28px] text-center">...</span> នាក់</p>
+                                    </div>
+                                    <div class="flex justify-between items-start mt-2">
+                                        <div class="text-center pt-8">
+                                            <p class="font-normal text-[13px]">ហត្ថលេខា និងឈ្មោះអ្នករៀបចំតារាងចំណាត់ថ្នាក់</p>
+                                        </div>
+                                        <div class="text-center">
+                                            <p id="top3LunarDateText" class="text-[13px] whitespace-nowrap">ថ្ងៃ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ខែ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ឆ្នាំ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;អដ្ឋស័ក ព.ស.២៥៧០</p>
+                                            <p class="mt-0.5 text-[13px] whitespace-nowrap">រាជធានីភ្នំពេញ ថ្ងៃទី&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ខែ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ឆ្នាំ២០២៦</p>
+                                            <p class="font-moul text-[15px] mt-2 pb-14">នាយកសាលា</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2650,7 +2720,7 @@
             populateDropdowns();
         }
 
-        // Print Orientation Helper (A4 Landscape for Results, Portrait for others)
+        // Print Orientation Helper (A4 Landscape for Results score sheet, Portrait for Top 3 and others)
         function setPrintOrientation(orientation) {
             let styleEl = document.getElementById('dynamicPrintOrientation');
             if (!styleEl) {
@@ -2661,7 +2731,7 @@
             if (orientation === 'landscape') {
                 styleEl.innerHTML = `@page { size: A4 landscape !important; margin: 5mm !important; }`;
             } else {
-                styleEl.innerHTML = `@page { size: A4 portrait !important; margin: 5mm !important; }`;
+                styleEl.innerHTML = `@page { size: A4 portrait !important; margin: 6mm 8mm !important; }`;
             }
         }
 
@@ -2672,7 +2742,19 @@
             }, 60);
         }
 
+        function printTop3() {
+            setPrintOrientation('portrait');
+            setTimeout(() => {
+                window.print();
+            }, 60);
+        }
+
         window.addEventListener('beforeprint', () => {
+            const top3State = document.getElementById('resultTop3State');
+            if (top3State && !top3State.classList.contains('hidden')) {
+                setPrintOrientation('portrait');
+                return;
+            }
             const resultsTab = document.getElementById('exam-results');
             if (resultsTab && !resultsTab.classList.contains('hidden')) {
                 setPrintOrientation('landscape');
@@ -3355,11 +3437,19 @@
             document.getElementById('resultEmptyState').classList.remove('hidden');
         }
 
+        function showScoreInput() {
+            document.getElementById('resultTop3State').classList.add('hidden');
+            document.getElementById('resultEmptyState').classList.add('hidden');
+            document.getElementById('resultInputState').classList.remove('hidden');
+            setPrintOrientation('landscape');
+        }
+
         function showTop3State() {
             if (isUserMode()) return;
             document.getElementById('resultEmptyState').classList.add('hidden');
             document.getElementById('resultInputState').classList.add('hidden');
             document.getElementById('resultTop3State').classList.remove('hidden');
+            setPrintOrientation('portrait');
             
             const selectTop3Subject = document.getElementById('top3SubjectFilter');
             if (selectTop3Subject && selectTop3Subject.value) {
@@ -3401,8 +3491,19 @@
             tbody.innerHTML = '';
             if (finalTop3.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" class="border border-black px-1 py-6 text-center text-gray-500">មិនទាន់មានទិន្នន័យជ័យលាភីទេ</td></tr>';
+                const totalEl = document.getElementById('top3TotalCandidates');
+                if (totalEl) totalEl.textContent = toKhmerNum(0);
+                const femaleEl = document.getElementById('top3FemaleCandidates');
+                if (femaleEl) femaleEl.textContent = toKhmerNum(0);
                 return;
             }
+
+            const top3Total = finalTop3.length;
+            const top3Females = finalTop3.filter(item => item.candidate && (item.candidate.gender === 'F' || item.candidate.gender === 'ស្រី')).length;
+            const totalEl = document.getElementById('top3TotalCandidates');
+            if (totalEl) totalEl.textContent = toKhmerNum(top3Total);
+            const femaleEl = document.getElementById('top3FemaleCandidates');
+            if (femaleEl) femaleEl.textContent = toKhmerNum(top3Females);
 
             finalTop3.forEach((item, index) => {
                 const c = item.candidate;
@@ -3413,14 +3514,14 @@
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="border border-black px-2 py-3 text-center">${toKhmerNum(index + 1)}</td>
-                    <td class="border border-black px-2 py-3 text-center">${toKhmerNum(c.seat)}</td>
-                    <td class="border border-black px-3 py-3 font-bold">${c.name}</td>
-                    <td class="border border-black px-2 py-3 text-center">${c.gender === 'F' ? 'ស្រី' : 'ប្រុស'}</td>
-                    <td class="border border-black px-2 py-3 text-center">${toKhmerNum(extractGradeNumber(c.grade))}</td>
-                    <td class="border border-black px-2 py-3 text-center">${c.subject}</td>
-                    <td class="border border-black px-2 py-3 text-center whitespace-nowrap">${c.school}</td>
-                    <td class="border border-black px-2 py-3 text-center font-moul text-red-600 text-[14px]">${rankStr}</td>
+                    <td class="border border-black px-1.5 py-1 text-center">${toKhmerNum(index + 1)}</td>
+                    <td class="border border-black px-1.5 py-1 text-center">${toKhmerNum(c.seat)}</td>
+                    <td class="border border-black px-2 py-1 font-bold">${c.name}</td>
+                    <td class="border border-black px-1.5 py-1 text-center">${(c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'}</td>
+                    <td class="border border-black px-1.5 py-1 text-center">${toKhmerNum(extractGradeNumber(c.grade))}</td>
+                    <td class="border border-black px-2 py-1 text-center">${c.subject}</td>
+                    <td class="border border-black px-2 py-1 text-center whitespace-nowrap">${c.school}</td>
+                    <td class="border border-black px-2 py-1 text-center font-moul text-red-600 text-[13px]">${rankStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
