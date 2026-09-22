@@ -155,12 +155,14 @@
                 padding-bottom: 2.5px !important;
                 padding-left: 4px !important;
                 padding-right: 4px !important;
-                font-size: 11px !important;
+                font-size: 12px !important;
+                font-weight: normal !important;
                 line-height: 1.25 !important;
             }
             #printableTop3Paper table th {
                 font-family: 'Moul', cursive !important;
-                font-size: 10.5px !important;
+                font-size: 12px !important;
+                font-weight: normal !important;
                 background-color: #f3f4f6 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -243,6 +245,16 @@
         }
         #scorePrintablePaper table td {
             white-space: nowrap;
+        }
+
+        /* Top 3 Table: No bold, Font Size 12 */
+        #printableTop3Paper table th,
+        #printableTop3Paper table td {
+            font-size: 12px !important;
+            font-weight: normal !important;
+        }
+        #printableTop3Paper table th {
+            font-family: 'Moul', cursive !important;
         }
 
         /* User Access Control: Hide Admin Only controls in User Mode */
@@ -929,14 +941,14 @@
                                 <table class="w-full border-collapse border border-black text-[12px] mb-3">
                                     <thead>
                                         <tr class="text-center font-moul bg-gray-50">
-                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">ល.រ</th>
-                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">លេខតុ</th>
-                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">គោត្តនាម-នាម</th>
-                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">ភេទ</th>
-                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[11px]">ថ្នាក់</th>
-                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">ឯកទេស</th>
-                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">សាខា</th>
-                                            <th class="border border-black px-2 py-1.5 font-moul text-[11px]">ចំណាត់ថ្នាក់</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[12px] font-normal">ល.រ</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[12px] font-normal">លេខតុ</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[12px] font-normal">គោត្តនាម-នាម</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[12px] font-normal">ភេទ</th>
+                                            <th class="border border-black px-1.5 py-1.5 font-moul text-[12px] font-normal">ថ្នាក់</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[12px] font-normal">ឯកទេស</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[12px] font-normal">សាខា</th>
+                                            <th class="border border-black px-2 py-1.5 font-moul text-[12px] font-normal">ចំណាត់ថ្នាក់</th>
                                         </tr>
                                     </thead>
                                     <tbody id="top3TableBody">
@@ -947,7 +959,7 @@
                                 <!-- Footer Section (Exact Match to User Attachment) -->
                                 <div class="top3-confirmation text-black text-[13px] leading-relaxed break-inside-avoid" style="margin-top: 4mm !important;">
                                     <div class="mb-2">
-                                        <p>បញ្ជាក់៖បញ្ជីនេះមានចំនួនបេក្ខជនសរុប៖ <span id="top3TotalCandidates" class="font-bold px-1 inline-block min-w-[28px] text-center">...</span> នាក់ ស្រី <span id="top3FemaleCandidates" class="font-bold px-1 inline-block min-w-[28px] text-center">...</span> នាក់</p>
+                                        <p>បញ្ជាក់៖បញ្ជីនេះមានចំនួនបេក្ខជនសរុប៖ <span id="top3TotalCandidates" class="font-normal px-1 inline-block min-w-[28px] text-center">...</span> នាក់ ស្រី <span id="top3FemaleCandidates" class="font-normal px-1 inline-block min-w-[28px] text-center">...</span> នាក់</p>
                                     </div>
                                     <div class="top3-signatures flex justify-between items-start" style="margin-top: 6mm !important;">
                                         <div class="text-center">
@@ -3558,14 +3570,14 @@
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="border border-black px-1.5 py-1 text-center">${toKhmerNum(index + 1)}</td>
-                    <td class="border border-black px-1.5 py-1 text-center">${toKhmerNum(c.seat)}</td>
-                    <td class="border border-black px-2 py-1 font-bold">${c.name}</td>
-                    <td class="border border-black px-1.5 py-1 text-center">${(c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'}</td>
-                    <td class="border border-black px-1.5 py-1 text-center">${toKhmerNum(extractGradeNumber(c.grade))}</td>
-                    <td class="border border-black px-2 py-1 text-center">${c.subject}</td>
-                    <td class="border border-black px-2 py-1 text-center whitespace-nowrap">${c.school}</td>
-                    <td class="border border-black px-2 py-1 text-center font-moul text-red-600 text-[13px]">${rankStr}</td>
+                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]">${toKhmerNum(index + 1)}</td>
+                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]">${toKhmerNum(c.seat)}</td>
+                    <td class="border border-black px-2 py-1 font-normal text-[12px]">${c.name}</td>
+                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]">${(c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'}</td>
+                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]">${toKhmerNum(extractGradeNumber(c.grade))}</td>
+                    <td class="border border-black px-2 py-1 text-center font-normal text-[12px]">${c.subject}</td>
+                    <td class="border border-black px-2 py-1 text-center whitespace-nowrap font-normal text-[12px]">${c.school}</td>
+                    <td class="border border-black px-2 py-1 text-center font-moul text-red-600 text-[12px] font-normal">${rankStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
