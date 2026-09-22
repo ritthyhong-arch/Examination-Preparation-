@@ -1696,19 +1696,19 @@
 
             const cloudMap = new Map();
             cloudList.forEach(c => {
-                cloudMap.set(c.id, c);
+                if (c.id) cloudMap.set(c.id, c);
                 const altKey = getCandidateKey(c);
                 if (altKey) cloudMap.set(altKey, c);
             });
 
             const localMap = new Map();
             localList.forEach(c => {
-                localMap.set(c.id, c);
+                if (c.id) localMap.set(c.id, c);
                 const altKey = getCandidateKey(c);
                 if (altKey) localMap.set(altKey, c);
             });
 
-            // Iterate over local list and update candidates that were NOT edited by the local user
+            // Iterate over local list and update candidates based on timestamps and dirty state
             const merged = localList.map(localC => {
                 const cId = localC.id;
                 const altKey = getCandidateKey(localC);
@@ -1716,12 +1716,33 @@
 
                 if (!cloudC) return localC;
 
-                // If local user has actively modified this candidate in this session, keep local changes!
+                // 1. If actively dirty in local browser session, local ALWAYS wins
                 if (dirtyIds && (dirtyIds.has(cId) || dirtyIds.has(altKey))) {
                     return localC;
                 }
 
-                // Candidate was NOT modified by local user: adopt Cloud's scores & results
+                // 2. Compare per-candidate timestamps (_updatedAt)
+                const localTime = localC._updatedAt ? new Date(localC._updatedAt).getTime() : 0;
+                const cloudTime = cloudC._updatedAt ? new Date(cloudC._updatedAt).getTime() : 0;
+
+                if (localTime > 0 && cloudTime > 0) {
+                    if (localTime > cloudTime) {
+                        return localC; // Local was edited more recently than cloud
+                    } else if (cloudTime > localTime) {
+                        return { ...localC, ...cloudC, id: cId }; // Cloud was edited more recently
+                    } else {
+                        return localC;
+                    }
+                }
+
+                if (localTime > 0 && cloudTime === 0) {
+                    return localC; // Local has timestamp, cloud does not
+                }
+                if (cloudTime > 0 && localTime === 0) {
+                    return { ...localC, ...cloudC, id: cId }; // Cloud has timestamp, local does not
+                }
+
+                // 3. Fallback when neither candidate has a timestamp:
                 const hasCloudScore = (cloudC.score1 !== undefined || cloudC.score2 !== undefined || 
                                        cloudC.score3 !== undefined || cloudC.score4 !== undefined || 
                                        cloudC.score5 !== undefined || cloudC.score6 !== undefined || 
@@ -1731,23 +1752,8 @@
                                        localC.score5 !== undefined || localC.score6 !== undefined || 
                                        localC.score7 !== undefined || localC.total !== undefined);
 
-                if (hasCloudScore) {
-                    return {
-                        ...localC,
-                        score1: cloudC.score1,
-                        score2: cloudC.score2,
-                        score3: cloudC.score3,
-                        score4: cloudC.score4,
-                        score5: cloudC.score5,
-                        score6: cloudC.score6,
-                        score7: cloudC.score7,
-                        total: cloudC.total,
-                        passed: cloudC.passed,
-                        mention: cloudC.mention
-                    };
-                } else if (hasLocalScore) {
-                    return localC;
-                }
+                if (hasLocalScore && !hasCloudScore) return localC;
+                if (hasCloudScore && !hasLocalScore) return { ...localC, ...cloudC, id: cId };
 
                 return localC;
             });
@@ -1826,18 +1832,31 @@
             updateAutoSaveIndicator('កំពុងរក្សាទុក...');
 
             try {
-                const storageKey = examConfigs[currentExamKey]?.storageKey || 'school_candidates_outstanding';
+                const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
                 ensureCandidateIds(mockCandidates);
 
                 // Snapshot of dirty IDs being saved right now
                 const savingDirtyIds = new Set(window.dirtyCandidateIds || []);
+                const nowIso = new Date().toISOString();
 
-                // 1. Fetch freshest Cloud state before saving to prevent overwriting other users
+                // 1. FAST LOCAL PROTECTION: Always save current candidate state to localStorage first
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
+                    localStorage.setItem(storageKey + '_updated_at', nowIso);
+                    localStorage.setItem('has_user_saved_data', 'true');
+                } catch(e) {
+                    console.error('localStorage save error:', e);
+                }
+
+                if (window.embeddedExamData) {
+                    window.embeddedExamData[storageKey] = JSON.parse(JSON.stringify(mockCandidates || []));
+                }
+
+                // 2. Fetch freshest Cloud state before saving and merge to protect other users' concurrent edits
                 let cloudOk = false;
                 try {
                     const cloudResult = await fetchFromSupabase(storageKey, true);
                     if (cloudResult && Array.isArray(cloudResult.data) && cloudResult.data.length > 0) {
-                        // Smart merge cloud data with local data
                         mockCandidates = mergeCandidates(mockCandidates, cloudResult.data, savingDirtyIds);
                     }
                 } catch(fetchErr) {
@@ -1845,27 +1864,20 @@
                 }
 
                 const cleanData = JSON.parse(JSON.stringify(mockCandidates || []));
-                const nowIso = new Date().toISOString();
 
-                // 2. Synchronous save to localStorage with timestamp
+                // 3. Update localStorage with merged dataset
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(cleanData));
                     localStorage.setItem(storageKey + '_updated_at', nowIso);
-                    localStorage.setItem('has_user_saved_data', 'true');
-                } catch(e) {
-                    console.error('localStorage save error:', e);
-                }
-
-                // 3. Keep in-memory cache updated
-                if (window.embeddedExamData) {
-                    window.embeddedExamData[storageKey] = cleanData;
-                }
+                } catch(e) {}
 
                 // 4. Save merged data to Supabase Cloud Database
                 cloudOk = await saveToSupabase(storageKey, cleanData, nowIso);
 
-                // Clear successfully saved dirty IDs
-                savingDirtyIds.forEach(id => window.dirtyCandidateIds?.delete(id));
+                // Only clear dirty IDs that were part of this save if cloud save succeeded
+                if (cloudOk) {
+                    savingDirtyIds.forEach(id => window.dirtyCandidateIds?.delete(id));
+                }
 
                 // 5. Save permanently to physical disk file via server API (if local dev server is running)
                 try {
@@ -1880,7 +1892,7 @@
                 updateAutoSaveIndicator();
 
                 if (!silent) {
-                    showToast(cloudOk ? 'ទិន្នន័យត្រូវបានរក្សាទុក និងសមកាលកម្ម Cloud ជោគជ័យ!' : 'ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
+                    showToast(cloudOk ? 'ទិន្នន័យត្រូវបានរក្សាទុក និងសមកាលកម្ម Cloud ជោគជ័យ!' : 'ទិន្នន័យត្រូវបានរក្សាទុកក្នុងកុំព្យូទ័រជោគជ័យ!', 'success');
                 }
                 return true;
             } catch (e) {
@@ -1911,13 +1923,13 @@
             const activeEl = document.activeElement;
             const isTypingScore = activeEl && activeEl.classList && activeEl.classList.contains('score-input');
 
-            // Check if there are differences
-            const beforeStr = JSON.stringify(mockCandidates.map(c => ({ id: c.id, t: c.total, s1: c.score1 })));
+            // Check if there are differences using timestamp-aware merge
+            const beforeStr = JSON.stringify(mockCandidates.map(c => ({ id: c.id, t: c.total, s1: c.score1, u: c._updatedAt })));
             mockCandidates = mergeCandidates(mockCandidates, cloudData, window.dirtyCandidateIds || new Set());
-            const afterStr = JSON.stringify(mockCandidates.map(c => ({ id: c.id, t: c.total, s1: c.score1 })));
+            const afterStr = JSON.stringify(mockCandidates.map(c => ({ id: c.id, t: c.total, s1: c.score1, u: c._updatedAt })));
 
             if (beforeStr !== afterStr) {
-                const storageKey = examConfigs[currentExamKey]?.storageKey || 'school_candidates_outstanding';
+                const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
                     if (cloudUpdatedAt) localStorage.setItem(storageKey + '_updated_at', cloudUpdatedAt);
@@ -1946,11 +1958,11 @@
                     }
                     realtimeChannel = supabaseClient.channel('exam_candidates_sync_room')
                         .on('postgres_changes', {
-                            event: 'UPDATE',
+                            event: '*',
                             schema: 'public',
                             table: 'exam_candidates'
                         }, (payload) => {
-                            const storageKey = examConfigs[currentExamKey]?.storageKey;
+                            const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
                             if (payload && payload.new && payload.new.exam_key === storageKey) {
                                 applyIncomingCloudUpdates(payload.new.data, payload.new.updated_at);
                             }
@@ -1966,7 +1978,7 @@
             backgroundSyncInterval = setInterval(async () => {
                 if (document.hidden || isSavingCandidates) return;
                 try {
-                    const storageKey = examConfigs[currentExamKey]?.storageKey;
+                    const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
                     const cloud = await fetchFromSupabase(storageKey, true);
                     if (cloud && Array.isArray(cloud.data)) {
                         applyIncomingCloudUpdates(cloud.data, cloud.updated_at);
@@ -2963,16 +2975,19 @@
             document.getElementById('resultEmptyState').classList.add('hidden');
             document.getElementById('resultInputState').classList.remove('hidden');
             
-            // Render default room 1
-            document.getElementById('scoreRoomFilter').value = '១';
-            filterScoreRoom('១');
+            const currentRoom = document.getElementById('scoreRoomFilter')?.value || localStorage.getItem('last_selected_score_room') || '១';
+            const roomEl = document.getElementById('scoreRoomFilter');
+            if (roomEl && roomEl.value !== currentRoom) roomEl.value = currentRoom;
+            filterScoreRoom(currentRoom);
         }
 
         function filterScoreRoom(roomNumber) {
+            localStorage.setItem('last_selected_score_room', roomNumber);
             if (window.dirtyCandidateIds && window.dirtyCandidateIds.size > 0) {
                 saveCandidates(true);
             }
-            document.getElementById('scoreRoomNumber').textContent = roomNumber;
+            const scoreRoomEl = document.getElementById('scoreRoomNumber');
+            if (scoreRoomEl) scoreRoomEl.textContent = roomNumber;
             renderScoreTableForRoom(roomNumber);
             showToast(`កំពុងបើកទម្រង់ពិន្ទុសម្រាប់: បន្ទប់លេខ ${roomNumber}`, 'info');
         }
@@ -3225,6 +3240,7 @@
                             currentCandidate[`score${i+1}`] = (scores[i] && scores[i].value !== '') ? parseInt(scores[i].value) : undefined;
                         }
                         currentCandidate.total = total;
+                        currentCandidate._updatedAt = new Date().toISOString();
                         
                         let mention = '';
                         if (hasValue) {
@@ -3315,6 +3331,11 @@
                         if (currentCandidate) {
                             currentCandidate.passed = undefined;
                             currentCandidate.mention = '';
+                            currentCandidate._updatedAt = new Date().toISOString();
+                            const cId = getCandidateKey(currentCandidate);
+                            currentCandidate.id = cId;
+                            if (!window.dirtyCandidateIds) window.dirtyCandidateIds = new Set();
+                            window.dirtyCandidateIds.add(cId);
                         }
                         totalCell.textContent = '';
                         resultCell.textContent = '';
@@ -3684,10 +3705,11 @@
                 renderTableForRoom(firstRoom);
                 renderAttendanceForRoom(firstRoom);
                 
-                if (selectScore) selectScore.value = firstRoom;
+                let activeScoreRoom = (selectScore && selectScore.value && selectScore.value !== 'all') ? selectScore.value : (localStorage.getItem('last_selected_score_room') || firstRoom);
+                if (selectScore) selectScore.value = activeScoreRoom;
                 const scoreRoomEl = document.getElementById('scoreRoomNumber');
-                if (scoreRoomEl) scoreRoomEl.textContent = firstRoom;
-                renderScoreTableForRoom(firstRoom);
+                if (scoreRoomEl) scoreRoomEl.textContent = activeScoreRoom;
+                renderScoreTableForRoom(activeScoreRoom);
             }
             return true;
         }
@@ -3742,24 +3764,26 @@
             try {
                 const cloudResult = await fetchFromSupabase(config.storageKey);
                 if (cloudResult && cloudResult.data && Array.isArray(cloudResult.data) && cloudResult.data.length > 0) {
-                    const cloudTime = cloudResult.updated_at ? new Date(cloudResult.updated_at).getTime() : 0;
-                    if (cloudTime > localTime || !loaded) {
-                        // Cloud has newer data or local was empty
-                        if (loaded && mockCandidates && mockCandidates.length > 0) {
-                            mockCandidates = mergeCandidates(mockCandidates, cloudResult.data, window.dirtyCandidateIds || new Set());
-                            loaded = applyCandidatesData(mockCandidates);
-                        } else {
-                            loaded = applyCandidatesData(cloudResult.data);
-                        }
-                        try {
-                            localStorage.setItem(config.storageKey, JSON.stringify(mockCandidates));
-                            if (cloudResult.updated_at) {
-                                localStorage.setItem(config.storageKey + '_updated_at', cloudResult.updated_at);
-                            }
-                        } catch(e) {}
-                    } else if (loaded && localTime > cloudTime) {
-                        // Local is newer! Smart merge with cloud first to avoid destroying other users' data
+                    if (loaded && mockCandidates && mockCandidates.length > 0) {
                         mockCandidates = mergeCandidates(mockCandidates, cloudResult.data, window.dirtyCandidateIds || new Set());
+                        applyCandidatesData(mockCandidates);
+                    } else {
+                        loaded = applyCandidatesData(cloudResult.data);
+                    }
+                    try {
+                        localStorage.setItem(config.storageKey, JSON.stringify(mockCandidates));
+                        if (cloudResult.updated_at) {
+                            localStorage.setItem(config.storageKey + '_updated_at', cloudResult.updated_at);
+                        }
+                    } catch(e) {}
+
+                    // If local has any candidate newer than cloud's updated_at, push merged data to cloud
+                    const cloudTime = cloudResult.updated_at ? new Date(cloudResult.updated_at).getTime() : 0;
+                    const hasNewerLocal = mockCandidates.some(c => {
+                        const cTime = c._updatedAt ? new Date(c._updatedAt).getTime() : 0;
+                        return cTime > cloudTime;
+                    });
+                    if (hasNewerLocal) {
                         saveCandidates(true);
                     }
                 } else if (loaded && (!cloudResult || !cloudResult.data || cloudResult.data.length === 0)) {
@@ -3906,7 +3930,7 @@
 
         window.addEventListener('beforeunload', () => {
             if (window.dirtyCandidateIds && window.dirtyCandidateIds.size > 0) {
-                const storageKey = examConfigs[currentExamKey]?.storageKey || 'school_candidates_outstanding';
+                const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
                     localStorage.setItem(storageKey + '_updated_at', new Date().toISOString());
