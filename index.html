@@ -3519,10 +3519,8 @@
             }
         }
 
-        function renderTop3(subject) {
-            document.getElementById('top3SubjectLabel').textContent = subject;
-            const tbody = document.getElementById('top3TableBody');
-            
+        function getTop3Candidates(subject) {
+            if (!subject) return [];
             // Filter out those who passed in the specified subject
             let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
             
@@ -3534,21 +3532,49 @@
                 candidatesByGrade[g].push(c);
             });
             
-            // Sort grades
+            // Sort grades ascending
             let sortedGrades = Object.keys(candidatesByGrade).map(Number).sort((a, b) => a - b);
             
             let finalTop3 = [];
             sortedGrades.forEach(g => {
                 let gradeCandidates = candidatesByGrade[g];
                 // Sort descending by total score
-                gradeCandidates.sort((a, b) => b.total - a.total);
-                // Get top 3 for this grade
-                let top3 = gradeCandidates.slice(0, 3);
-                // Assign rank explicitly to the object so we know their rank within the grade
-                top3.forEach((c, idx) => {
-                    finalTop3.push({ candidate: c, rank: idx + 1 });
+                gradeCandidates.sort((a, b) => {
+                    const scoreA = (a.total !== undefined && a.total !== null) ? Number(a.total) : 0;
+                    const scoreB = (b.total !== undefined && b.total !== null) ? Number(b.total) : 0;
+                    return scoreB - scoreA;
                 });
+                
+                // Assign ranks (1, 2, 3) where equal scores share the same rank and all tied candidates are included
+                let currentRank = 0;
+                let prevScore = null;
+
+                for (let i = 0; i < gradeCandidates.length; i++) {
+                    const c = gradeCandidates[i];
+                    const score = (c.total !== undefined && c.total !== null) ? Number(c.total) : 0;
+                    
+                    if (prevScore === null || score !== prevScore) {
+                        currentRank++;
+                        prevScore = score;
+                    }
+                    
+                    // If rank is within top 3 (1, 2, 3), include this candidate!
+                    if (currentRank <= 3) {
+                        finalTop3.push({ candidate: c, rank: currentRank });
+                    } else {
+                        break;
+                    }
+                }
             });
+
+            return finalTop3;
+        }
+
+        function renderTop3(subject) {
+            document.getElementById('top3SubjectLabel').textContent = subject;
+            const tbody = document.getElementById('top3TableBody');
+            
+            const finalTop3 = getTop3Candidates(subject);
 
             tbody.innerHTML = '';
             if (finalTop3.length === 0) {
@@ -3599,31 +3625,7 @@
                 return;
             }
 
-            // Filter out those who passed in the specified subject
-            let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
-            
-            // Group by grade
-            let candidatesByGrade = {};
-            passedCandidates.forEach(c => {
-                let g = extractGradeNumber(c.grade);
-                if (!candidatesByGrade[g]) candidatesByGrade[g] = [];
-                candidatesByGrade[g].push(c);
-            });
-            
-            // Sort grades
-            let sortedGrades = Object.keys(candidatesByGrade).map(Number).sort((a, b) => a - b);
-            
-            let finalTop3 = [];
-            sortedGrades.forEach(g => {
-                let gradeCandidates = candidatesByGrade[g];
-                // Sort descending by total score
-                gradeCandidates.sort((a, b) => b.total - a.total);
-                // Get top 3 for this grade
-                let top3 = gradeCandidates.slice(0, 3);
-                top3.forEach((c, idx) => {
-                    finalTop3.push({ candidate: c, rank: idx + 1 });
-                });
-            });
+            const finalTop3 = getTop3Candidates(subject);
 
             if (finalTop3.length === 0) {
                 showToast('មិនមានទិន្នន័យជ័យលាភីសម្រាប់ទាញយកទេ', 'error');
