@@ -3561,13 +3561,10 @@
             }
         }
 
-        function getTop3Candidates(subject, branchFilter = 'all') {
+        function getTop3Candidates(subject) {
             if (!subject) return [];
             // Filter out candidates in the specified subject who passed
             let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
-            if (branchFilter !== 'all') {
-                passedCandidates = passedCandidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
-            }
             
             // Filter out candidates without a valid total score
             passedCandidates = passedCandidates.filter(c => c.total !== undefined && c.total !== null);
@@ -3765,32 +3762,29 @@
             const subjectFilter = subjectFilterSelect ? subjectFilterSelect.value : 'all';
             const branchFilter = branchFilterSelect ? branchFilterSelect.value : 'all';
 
-            // 1. Gather all unique subjects based on filtered mockCandidates
-            let filteredBase = mockCandidates;
+            // 1. Gather all unique subjects from all candidates
+            let allSubjects = [...new Set(mockCandidates.map(c => String(c.subject || '').trim()).filter(s => s))];
+            
+            // 2. Fetch overall Top 3 for each subject
+            let overallTop3 = [];
+            allSubjects.forEach(sub => {
+                overallTop3 = overallTop3.concat(getTop3Candidates(sub));
+            });
+            
+            // 3. Apply Filters to the overall Top 3
+            let top3Candidates = overallTop3;
             if (subjectFilter !== 'all') {
-                filteredBase = filteredBase.filter(c => String(c.subject || '').trim() === subjectFilter);
+                top3Candidates = top3Candidates.filter(c => String(c.subject || '').trim() === subjectFilter);
             }
             if (branchFilter !== 'all') {
-                filteredBase = filteredBase.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
+                top3Candidates = top3Candidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
             }
-
-            let allSubjects = [...new Set(filteredBase.map(c => String(c.subject || '').trim()).filter(s => s))];
             
-            // 2. Fetch Top 3 for each subject
-            let top3Candidates = [];
+            // 4. Count subjects for pie chart
             let subjectCounts = {};
-            
-            allSubjects.forEach(sub => {
-                let winners = getTop3Candidates(sub, branchFilter);
-                // Apply subject filter to the winners if needed
-                if (subjectFilter !== 'all') {
-                    winners = winners.filter(c => String(c.subject || '').trim() === subjectFilter);
-                }
-                
-                if (winners.length > 0) {
-                    subjectCounts[sub] = winners.length;
-                    top3Candidates = top3Candidates.concat(winners);
-                }
+            top3Candidates.forEach(c => {
+                let sub = String(c.subject || '').trim();
+                subjectCounts[sub] = (subjectCounts[sub] || 0) + 1;
             });
 
             // Update summary cards
