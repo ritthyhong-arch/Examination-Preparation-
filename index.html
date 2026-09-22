@@ -2629,12 +2629,12 @@
                 });
                 
                 if (selectDashSubject) selectDashSubject.innerHTML = subjectHTML;
-                if (selectTop3Subject) selectTop3Subject.innerHTML = top3SubjectHTML;
-            }
-                
-                // Pre-select first option for Top 3 if exists
-                if (uniqueSubjects.length > 0) {
-                    selectTop3Subject.value = uniqueSubjects[0];
+                if (selectTop3Subject) {
+                    selectTop3Subject.innerHTML = top3SubjectHTML;
+                    // Pre-select first option for Top 3 if exists
+                    if (uniqueSubjects.length > 0) {
+                        selectTop3Subject.value = uniqueSubjects[0];
+                    }
                 }
             }
         }
