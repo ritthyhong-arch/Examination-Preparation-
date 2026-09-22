@@ -954,8 +954,8 @@
                                             <p class="font-normal text-[13px]">ហត្ថលេខា និងឈ្មោះអ្នករៀបចំតារាងចំណាត់ថ្នាក់</p>
                                         </div>
                                         <div class="text-center">
-                                            <p id="top3LunarDateText" class="text-[13px] whitespace-nowrap">ថ្ងៃ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ខែ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ឆ្នាំ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;អដ្ឋស័ក ព.ស.២៥៧០</p>
-                                            <p class="mt-0.5 text-[13px] whitespace-nowrap">រាជធានីភ្នំពេញ ថ្ងៃទី&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ខែ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ឆ្នាំ២០២៦</p>
+                                            <p id="top3LunarDateText" class="text-[13px] whitespace-nowrap cursor-pointer hover:bg-yellow-50 rounded px-1 transition" title="ចុចដើម្បីកែប្រែកាលបរិច្ឆេទប្រសិនបើចាំបាច់" contenteditable="true">ថ្ងៃ...</p>
+                                            <p class="mt-0.5 text-[13px] whitespace-nowrap">រាជធានីភ្នំពេញ <span id="top3KhmerSolarDate" class="cursor-pointer hover:bg-yellow-50 rounded px-1 transition" title="ចុចដើម្បីកែប្រែកាលបរិច្ឆេទប្រសិនបើចាំបាច់" contenteditable="true">ថ្ងៃទី... ខែ... ឆ្នាំ...</span></p>
                                             <p class="font-moul text-[15px] mt-2 pb-14">នាយកសាលា</p>
                                         </div>
                                     </div>
@@ -2466,6 +2466,38 @@
             document.getElementById('femaleStudentsText').textContent = toKhmerNum(females);
         }
 
+        // មុខងារគណនាថ្ងៃខែចន្ទគតិខ្មែរដោយស្វ័យប្រវត្តិ
+        function getKhmerLunarDateString(date = new Date()) {
+            const khmerDays = ['អាទិត្យ', 'ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+            const animalYears = ['ជូត', 'ឆ្លូវ', 'ខាល', 'ថោះ', 'រោង', 'ម្សាញ់', 'មមី', 'មមែ', 'វក', 'រកា', 'ច', 'កុរ'];
+            const saks = ['ទោស័ក', 'ត្រីស័ក', 'ចត្វាស័ក', 'បញ្ចស័ក', 'ឆស័ក', 'សប្តស័ក', 'អដ្ឋស័ក', 'នព្វស័ក', 'សំរឹទ្ធិស័ក', 'ឯកស័ក'];
+            const solarToLunarMonth = ['បុស្ស', 'មាឃ', 'ផល្គុន', 'ចេត្រ', 'ពិសាខ', 'ជេស្ឋ', 'អាសាឍ', 'ស្រាពណ៍', 'ភទ្របទ', 'អស្សុជ', 'កត្តិក', 'មិគសិរ'];
+            
+            const dayOfWeek = khmerDays[date.getDay()];
+            const year = date.getFullYear();
+            const animalYear = animalYears[((year - 4) % 12 + 12) % 12];
+            const sak = saks[year % 10];
+            const beYear = year + 544;
+            
+            // គណនាកើត/រោច តាម synodic lunar cycle
+            const refNewMoon = new Date('2000-01-06T18:14:00Z').getTime();
+            const synodicMs = 29.530588853 * 86400000;
+            const diff = date.getTime() - refNewMoon;
+            const phase = ((diff % synodicMs) + synodicMs) % synodicMs / synodicMs;
+            const dayOfMoon = Math.floor(phase * 29.530588853) + 1;
+            
+            let moonPhaseStr = '';
+            if (dayOfMoon <= 15) {
+                moonPhaseStr = `${toKhmerNum(dayOfMoon)}កើត`;
+            } else {
+                moonPhaseStr = `${toKhmerNum(dayOfMoon - 15)}រោច`;
+            }
+            
+            const lunarMonth = solarToLunarMonth[date.getMonth()];
+            
+            return `ថ្ងៃ ${dayOfWeek} ${moonPhaseStr} ខែ ${lunarMonth} ឆ្នាំ ${animalYear} ${sak} ព.ស. ${toKhmerNum(beYear)}`;
+        }
+
         // មុខងារកំណត់ថ្ងៃខែឆ្នាំស្វ័យប្រវត្តិ សម្រាប់តែទម្រង់ចុះហត្ថលេខា
         function setAutoDates() {
             const date = new Date();
@@ -2477,13 +2509,18 @@
             const dateString = `ថ្ងៃទី ${day} ខែ ${month} ឆ្នាំ ${year}`;
             
             const top3DateEl = document.getElementById('top3KhmerSolarDate');
-            if(top3DateEl) top3DateEl.innerHTML = dateString;
+            if(top3DateEl) top3DateEl.textContent = dateString;
             
             const signatureDateEl = document.getElementById('khmerSolarDateSignature');
             if(signatureDateEl) signatureDateEl.innerHTML = dateString;
             
             const attendanceSignatureDateEl = document.getElementById('attendanceKhmerSolarDateSignature');
             if(attendanceSignatureDateEl) attendanceSignatureDateEl.innerHTML = dateString;
+
+            const top3LunarEl = document.getElementById('top3LunarDateText');
+            if (top3LunarEl) {
+                top3LunarEl.textContent = getKhmerLunarDateString(date);
+            }
         }
 
         // មុខងារបែងចែកបន្ទប់ស្វ័យប្រវត្តិ ព្រមទាំងបញ្ចូលថ្ងៃខែជាក់ស្តែង
@@ -3501,6 +3538,7 @@
                 if (totalEl) totalEl.textContent = toKhmerNum(0);
                 const femaleEl = document.getElementById('top3FemaleCandidates');
                 if (femaleEl) femaleEl.textContent = toKhmerNum(0);
+                setAutoDates();
                 return;
             }
 
@@ -3531,6 +3569,7 @@
                 `;
                 tbody.appendChild(tr);
             });
+            setAutoDates();
         }
 
         // --- DASHBOARD LOGIC ---
