@@ -3563,11 +3563,14 @@
 
         function getTop3Candidates(subject, branchFilter = 'all') {
             if (!subject) return [];
-            // Filter out those who passed in the specified subject
-            let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
+            // Filter out candidates in the specified subject
+            let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject);
             if (branchFilter !== 'all') {
                 passedCandidates = passedCandidates.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
             }
+            
+            // Filter out candidates without a valid total score
+            passedCandidates = passedCandidates.filter(c => c.total !== undefined && c.total !== null);
             
             // Group by grade
             let candidatesByGrade = {};
@@ -3751,6 +3754,11 @@
         let myPieChart = null;
 
         function updateDashboard() {
+            // Ensure all totals are calculated before extracting Top 3
+            if (typeof recalculateAllScores === 'function') {
+                recalculateAllScores(false);
+            }
+
             const subjectFilterSelect = document.getElementById('dashSubjectFilter');
             const branchFilterSelect = document.getElementById('dashBranchFilter');
             
