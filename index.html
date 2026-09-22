@@ -1023,10 +1023,8 @@
                                     </div>
                                 </div>
                                 <div class="relative">
-                                    <select id="dashRoomFilter" onchange="updateDashboard()" class="appearance-none bg-white border border-gray-300 text-gray-700 font-medium py-2 pl-4 pr-10 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition cursor-pointer">
-                                        <option value="all">គ្រប់បន្ទប់</option>
-                                        <option value="១">បន្ទប់លេខ ១</option>
-                                        <option value="២">បន្ទប់លេខ ២</option>
+                                    <select id="dashBranchFilter" onchange="updateDashboard()" class="appearance-none bg-white border border-gray-300 text-gray-700 font-medium py-2 pl-4 pr-10 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition cursor-pointer">
+                                        <option value="all">ជ្រើសរើសសាខា</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                                         <i class="fas fa-filter text-xs"></i>
@@ -2579,14 +2577,11 @@
             const selectRoom = document.getElementById('roomFilterSelect');
             const selectAttendance = document.getElementById('attendanceRoomFilterSelect');
             const selectScore = document.getElementById('scoreRoomFilter');
-            const selectDashRoom = document.getElementById('dashRoomFilter');
+            const selectDashBranch = document.getElementById('dashBranchFilter');
             
             let optionsHTML = '<option value="all">គ្រប់បន្ទប់ទាំងអស់</option>';
             let roomOptionsHTML = '';
             
-            // To sort Khmer numerals properly, map them back to int or just rely on the existing ordered room names
-            // Since mockCandidates are sorted by room inherently if generateRooms was used, uniqueRooms will likely be ordered.
-            // But let's just render what we have in uniqueRooms
             uniqueRooms.forEach(khRoom => {
                 roomOptionsHTML += `<option value="${khRoom}">បន្ទប់លេខ ${khRoom}</option>`;
             });
@@ -2594,7 +2589,16 @@
             if (selectRoom) selectRoom.innerHTML = roomOptionsHTML;
             if (selectAttendance) selectAttendance.innerHTML = roomOptionsHTML;
             if (selectScore) selectScore.innerHTML = optionsHTML + roomOptionsHTML;
-            if (selectDashRoom) selectDashRoom.innerHTML = optionsHTML + roomOptionsHTML;
+            
+            if (selectDashBranch) {
+                let uniqueBranches = [...new Set(mockCandidates.map(c => String(c.school || 'ផ្សេងៗ').trim()))].filter(b => b !== '');
+                uniqueBranches.sort((a,b) => a.localeCompare(b, 'km'));
+                let branchHTML = '<option value="all">ជ្រើសរើសសាខា</option>';
+                uniqueBranches.forEach(b => {
+                    branchHTML += `<option value="${b}">${b}</option>`;
+                });
+                selectDashBranch.innerHTML = branchHTML;
+            }
 
             const selectDashSubject = document.getElementById('dashSubjectFilter');
             const selectTop3Subject = document.getElementById('top3SubjectFilter');
@@ -3745,34 +3749,34 @@
 
         function updateDashboard() {
             const subjectFilterSelect = document.getElementById('dashSubjectFilter');
-            const roomFilterSelect = document.getElementById('dashRoomFilter');
+            const branchFilterSelect = document.getElementById('dashBranchFilter');
             
             const subjectFilter = subjectFilterSelect ? subjectFilterSelect.value : 'all';
-            const roomFilter = roomFilterSelect ? roomFilterSelect.value : 'all';
+            const branchFilter = branchFilterSelect ? branchFilterSelect.value : 'all';
 
             // 1. Gather all unique subjects based on filtered mockCandidates
             let filteredBase = mockCandidates;
             if (subjectFilter !== 'all') {
                 filteredBase = filteredBase.filter(c => String(c.subject || '').trim() === subjectFilter);
             }
-            if (roomFilter !== 'all') {
-                filteredBase = filteredBase.filter(c => c.room === roomFilter);
+            if (branchFilter !== 'all') {
+                filteredBase = filteredBase.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
             }
 
             let allSubjects = [...new Set(filteredBase.map(c => String(c.subject || '').trim()).filter(s => s))];
             
-            // 2. Fetch Top 3 for each subject (using the global mockCandidates first, then filtering, or filtering first? getTop3Candidates relies on mockCandidates, so we can filter the result of getTop3Candidates)
+            // 2. Fetch Top 3 for each subject
             let top3Candidates = [];
             let subjectCounts = {};
             
             allSubjects.forEach(sub => {
                 let winners = getTop3Candidates(sub);
-                // Apply room and subject filters to the winners if needed
+                // Apply branch and subject filters to the winners if needed
                 if (subjectFilter !== 'all') {
                     winners = winners.filter(c => String(c.subject || '').trim() === subjectFilter);
                 }
-                if (roomFilter !== 'all') {
-                    winners = winners.filter(c => c.room === roomFilter);
+                if (branchFilter !== 'all') {
+                    winners = winners.filter(c => String(c.school || 'ផ្សេងៗ').trim() === branchFilter);
                 }
                 
                 if (winners.length > 0) {
@@ -3957,9 +3961,13 @@
             if (myPieChart) { myPieChart.destroy(); myPieChart = null; }
             
             // Clear Dropdowns
-            ['roomFilterSelect', 'attendanceRoomFilterSelect', 'scoreRoomFilter', 'dashRoomFilter'].forEach(id => {
+            ['roomFilterSelect', 'attendanceRoomFilterSelect', 'scoreRoomFilter'].forEach(id => {
                 let el = document.getElementById(id);
                 if (el) el.innerHTML = '<option value="all">មិនមានបន្ទប់</option>';
+            });
+            ['dashBranchFilter'].forEach(id => {
+                let el = document.getElementById(id);
+                if (el) el.innerHTML = '<option value="all">ជ្រើសរើសសាខា</option>';
             });
             ['dashSubjectFilter'].forEach(id => {
                 let el = document.getElementById(id);
@@ -4008,7 +4016,7 @@
                 const selectRoom = document.getElementById('roomFilterSelect');
                 const selectAttendance = document.getElementById('attendanceRoomFilterSelect');
                 const selectScore = document.getElementById('scoreRoomFilter');
-                const selectDashRoom = document.getElementById('dashRoomFilter');
+                const selectDashBranch = document.getElementById('dashBranchFilter');
                 
                 let optionsHTML = '<option value="all">គ្រប់បន្ទប់ទាំងអស់</option>';
                 let roomOptionsHTML = '';
@@ -4019,7 +4027,16 @@
                 if (selectRoom) selectRoom.innerHTML = roomOptionsHTML;
                 if (selectAttendance) selectAttendance.innerHTML = roomOptionsHTML;
                 if (selectScore) selectScore.innerHTML = optionsHTML + roomOptionsHTML;
-                if (selectDashRoom) selectDashRoom.innerHTML = optionsHTML + roomOptionsHTML;
+                
+                if (selectDashBranch) {
+                    let uniqueBranches = [...new Set(mockCandidates.map(c => String(c.school || 'ផ្សេងៗ').trim()))].filter(b => b !== '');
+                    uniqueBranches.sort((a,b) => a.localeCompare(b, 'km'));
+                    let branchHTML = '<option value="all">ជ្រើសរើសសាខា</option>';
+                    uniqueBranches.forEach(b => {
+                        branchHTML += `<option value="${b}">${b}</option>`;
+                    });
+                    selectDashBranch.innerHTML = branchHTML;
+                }
 
                 const selectDashSubject = document.getElementById('dashSubjectFilter');
                 const selectTop3Subject = document.getElementById('top3SubjectFilter');
