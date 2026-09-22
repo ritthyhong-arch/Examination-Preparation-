@@ -1540,6 +1540,9 @@
                 if (url && key && window.supabase && typeof window.supabase.createClient === 'function') {
                     supabaseClient = window.supabase.createClient(url, key);
                     updateCloudStatusUI('connected');
+                    if (typeof startCloudBackgroundSync === 'function') {
+                        startCloudBackgroundSync();
+                    }
                     return supabaseClient;
                 } else {
                     supabaseClient = null;
@@ -1636,24 +1639,127 @@
             }
         }
 
-        async function fetchFromSupabase(examKey) {
+        // ==================== CONCURRENCY & MULTI-USER SYNCHRONIZATION ====================
+        window.dirtyCandidateIds = new Set();
+        let isSavingCandidates = false;
+        let hasPendingSave = false;
+        let autoSaveDebounceTimer = null;
+        let backgroundSyncInterval = null;
+        let realtimeChannel = null;
+
+        function getCandidateKey(c) {
+            if (!c) return '';
+            if (c.id) return String(c.id);
+            const room = String(c.room || '').trim();
+            const seat = String(c.seat || '').trim().replace(/^0+/, '') || '0';
+            const name = String(c.name || '').trim().replace(/\s+/g, ' ');
+            return `cand_${room}_${seat}_${name}`;
+        }
+
+        function ensureCandidateIds(candidates) {
+            if (!Array.isArray(candidates)) return;
+            candidates.forEach((c, idx) => {
+                if (!c.id) {
+                    c.id = getCandidateKey(c) || `cand_idx_${idx}`;
+                }
+            });
+        }
+
+        function mergeCandidates(localList, cloudList, dirtyIds = new Set()) {
+            if (!Array.isArray(cloudList) || cloudList.length === 0) return localList || [];
+            if (!Array.isArray(localList) || localList.length === 0) return cloudList || [];
+
+            ensureCandidateIds(localList);
+            ensureCandidateIds(cloudList);
+
+            const cloudMap = new Map();
+            cloudList.forEach(c => {
+                cloudMap.set(c.id, c);
+                const altKey = getCandidateKey(c);
+                if (altKey) cloudMap.set(altKey, c);
+            });
+
+            const localMap = new Map();
+            localList.forEach(c => {
+                localMap.set(c.id, c);
+                const altKey = getCandidateKey(c);
+                if (altKey) localMap.set(altKey, c);
+            });
+
+            // Iterate over local list and update candidates that were NOT edited by the local user
+            const merged = localList.map(localC => {
+                const cId = localC.id;
+                const altKey = getCandidateKey(localC);
+                const cloudC = cloudMap.get(cId) || cloudMap.get(altKey);
+
+                if (!cloudC) return localC;
+
+                // If local user has actively modified this candidate in this session, keep local changes!
+                if (dirtyIds && (dirtyIds.has(cId) || dirtyIds.has(altKey))) {
+                    return localC;
+                }
+
+                // Candidate was NOT modified by local user: adopt Cloud's scores & results
+                const hasCloudScore = (cloudC.score1 !== undefined || cloudC.score2 !== undefined || 
+                                       cloudC.score3 !== undefined || cloudC.score4 !== undefined || 
+                                       cloudC.score5 !== undefined || cloudC.score6 !== undefined || 
+                                       cloudC.score7 !== undefined || cloudC.total !== undefined);
+                const hasLocalScore = (localC.score1 !== undefined || localC.score2 !== undefined || 
+                                       localC.score3 !== undefined || localC.score4 !== undefined || 
+                                       localC.score5 !== undefined || localC.score6 !== undefined || 
+                                       localC.score7 !== undefined || localC.total !== undefined);
+
+                if (hasCloudScore) {
+                    return {
+                        ...localC,
+                        score1: cloudC.score1,
+                        score2: cloudC.score2,
+                        score3: cloudC.score3,
+                        score4: cloudC.score4,
+                        score5: cloudC.score5,
+                        score6: cloudC.score6,
+                        score7: cloudC.score7,
+                        total: cloudC.total,
+                        passed: cloudC.passed,
+                        mention: cloudC.mention
+                    };
+                } else if (hasLocalScore) {
+                    return localC;
+                }
+
+                return localC;
+            });
+
+            // If Cloud has candidate records not found locally, append them
+            cloudList.forEach(cloudC => {
+                const cId = cloudC.id;
+                const altKey = getCandidateKey(cloudC);
+                if (!localMap.has(cId) && !localMap.has(altKey)) {
+                    merged.push(cloudC);
+                }
+            });
+
+            return merged;
+        }
+
+        async function fetchFromSupabase(examKey, silent = false) {
             await ensureSupabaseReady();
             if (!supabaseClient) return null;
             try {
-                updateCloudStatusUI('syncing');
+                if (!silent) updateCloudStatusUI('syncing');
                 const { data, error } = await supabaseClient
                     .from('exam_candidates')
                     .select('data, updated_at')
                     .eq('exam_key', examKey)
                     .maybeSingle();
                 if (error) throw error;
-                updateCloudStatusUI('connected');
+                if (!silent) updateCloudStatusUI('connected');
                 if (data && Array.isArray(data.data)) {
                     return { data: data.data, updated_at: data.updated_at };
                 }
             } catch(e) {
                 console.warn('Supabase fetch failed:', e);
-                updateCloudStatusUI('connected');
+                if (!silent) updateCloudStatusUI('connected');
             }
             return null;
         }
@@ -1684,12 +1790,42 @@
         }
 
         async function saveCandidates(silent = false) {
+            if (autoSaveDebounceTimer) {
+                clearTimeout(autoSaveDebounceTimer);
+                autoSaveDebounceTimer = null;
+            }
+
+            if (isSavingCandidates) {
+                hasPendingSave = true;
+                return true;
+            }
+
+            isSavingCandidates = true;
+            updateAutoSaveIndicator('កំពុងរក្សាទុក...');
+
             try {
-                const storageKey = examConfigs[currentExamKey].storageKey;
+                const storageKey = examConfigs[currentExamKey]?.storageKey || 'school_candidates_outstanding';
+                ensureCandidateIds(mockCandidates);
+
+                // Snapshot of dirty IDs being saved right now
+                const savingDirtyIds = new Set(window.dirtyCandidateIds || []);
+
+                // 1. Fetch freshest Cloud state before saving to prevent overwriting other users
+                let cloudOk = false;
+                try {
+                    const cloudResult = await fetchFromSupabase(storageKey, true);
+                    if (cloudResult && Array.isArray(cloudResult.data) && cloudResult.data.length > 0) {
+                        // Smart merge cloud data with local data
+                        mockCandidates = mergeCandidates(mockCandidates, cloudResult.data, savingDirtyIds);
+                    }
+                } catch(fetchErr) {
+                    console.warn('Pre-save fetch failed, proceeding with local data:', fetchErr);
+                }
+
                 const cleanData = JSON.parse(JSON.stringify(mockCandidates || []));
                 const nowIso = new Date().toISOString();
 
-                // 1. Instant synchronous save to localStorage with timestamp
+                // 2. Synchronous save to localStorage with timestamp
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(cleanData));
                     localStorage.setItem(storageKey + '_updated_at', nowIso);
@@ -1697,17 +1833,19 @@
                 } catch(e) {
                     console.error('localStorage save error:', e);
                 }
-                updateAutoSaveIndicator();
 
-                // 2. Keep in-memory cache updated
+                // 3. Keep in-memory cache updated
                 if (window.embeddedExamData) {
                     window.embeddedExamData[storageKey] = cleanData;
                 }
 
-                // 3. Save to Supabase Cloud Database (zero data loss across devices!)
-                const cloudOk = await saveToSupabase(storageKey, cleanData, nowIso);
+                // 4. Save merged data to Supabase Cloud Database
+                cloudOk = await saveToSupabase(storageKey, cleanData, nowIso);
 
-                // 4. Save permanently to physical disk file via server API (if local dev server is running)
+                // Clear successfully saved dirty IDs
+                savingDirtyIds.forEach(id => window.dirtyCandidateIds?.delete(id));
+
+                // 5. Save permanently to physical disk file via server API (if local dev server is running)
                 try {
                     const apiBase = window.location.protocol.startsWith('http') ? '' : 'http://localhost:8080';
                     fetch(apiBase + '/api/data?key=' + encodeURIComponent(storageKey), {
@@ -1717,15 +1855,102 @@
                     }).catch(() => {});
                 } catch(e) {}
 
+                updateAutoSaveIndicator();
+
                 if (!silent) {
-                    showToast(cloudOk ? 'ទិន្នន័យត្រូវបានរក្សាទុកក្នុង Cloud ដោយជោគជ័យ!' : 'ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
+                    showToast(cloudOk ? 'ទិន្នន័យត្រូវបានរក្សាទុក និងសមកាលកម្ម Cloud ជោគជ័យ!' : 'ទិន្នន័យត្រូវបានរក្សាទុកដោយជោគជ័យ!', 'success');
                 }
                 return true;
             } catch (e) {
-                console.error(e);
+                console.error('Save error:', e);
                 if (!silent) showToast('មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!', 'error');
                 return false;
+            } finally {
+                isSavingCandidates = false;
+                if (hasPendingSave) {
+                    hasPendingSave = false;
+                    setTimeout(() => saveCandidates(true), 400);
+                }
             }
+        }
+
+        function triggerAutoSaveDebounced() {
+            updateAutoSaveIndicator('កំពុងវាយបញ្ចូល...');
+            if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
+            autoSaveDebounceTimer = setTimeout(() => {
+                saveCandidates(true);
+            }, 800);
+        }
+
+        function applyIncomingCloudUpdates(cloudData, cloudUpdatedAt) {
+            if (!Array.isArray(cloudData) || cloudData.length === 0) return;
+            if (isSavingCandidates) return;
+
+            const activeEl = document.activeElement;
+            const isTypingScore = activeEl && activeEl.classList && activeEl.classList.contains('score-input');
+
+            // Check if there are differences
+            const beforeStr = JSON.stringify(mockCandidates.map(c => ({ id: c.id, t: c.total, s1: c.score1 })));
+            mockCandidates = mergeCandidates(mockCandidates, cloudData, window.dirtyCandidateIds || new Set());
+            const afterStr = JSON.stringify(mockCandidates.map(c => ({ id: c.id, t: c.total, s1: c.score1 })));
+
+            if (beforeStr !== afterStr) {
+                const storageKey = examConfigs[currentExamKey]?.storageKey || 'school_candidates_outstanding';
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
+                    if (cloudUpdatedAt) localStorage.setItem(storageKey + '_updated_at', cloudUpdatedAt);
+                } catch(e) {}
+
+                // If user is viewing score table and NOT currently typing, re-render to reflect new scores
+                const currentRoomFilter = document.getElementById('scoreRoomFilter')?.value;
+                const resultInputState = document.getElementById('resultInputState');
+                if (resultInputState && !resultInputState.classList.contains('hidden')) {
+                    if (!isTypingScore && currentRoomFilter) {
+                        renderScoreTableForRoom(currentRoomFilter);
+                    }
+                }
+                
+                updateDashboard();
+                updateAutoSaveIndicator('សមកាលកម្មទិន្នន័យថ្មីពី Cloud');
+            }
+        }
+
+        function startCloudBackgroundSync() {
+            // 1. Supabase Realtime channel
+            if (supabaseClient && typeof supabaseClient.channel === 'function') {
+                try {
+                    if (realtimeChannel) {
+                        supabaseClient.removeChannel(realtimeChannel);
+                    }
+                    realtimeChannel = supabaseClient.channel('exam_candidates_sync_room')
+                        .on('postgres_changes', {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'exam_candidates'
+                        }, (payload) => {
+                            const storageKey = examConfigs[currentExamKey]?.storageKey;
+                            if (payload && payload.new && payload.new.exam_key === storageKey) {
+                                applyIncomingCloudUpdates(payload.new.data, payload.new.updated_at);
+                            }
+                        })
+                        .subscribe();
+                } catch(e) {
+                    console.warn('Realtime sync subscribe warning:', e);
+                }
+            }
+
+            // 2. Periodic Polling fallback (every 12s when tab is active)
+            if (backgroundSyncInterval) clearInterval(backgroundSyncInterval);
+            backgroundSyncInterval = setInterval(async () => {
+                if (document.hidden || isSavingCandidates) return;
+                try {
+                    const storageKey = examConfigs[currentExamKey]?.storageKey;
+                    const cloud = await fetchFromSupabase(storageKey, true);
+                    if (cloud && Array.isArray(cloud.data)) {
+                        applyIncomingCloudUpdates(cloud.data, cloud.updated_at);
+                    }
+                } catch(e) {}
+            }, 12000);
         }
 
         window.openCloudSettingsModal = openCloudSettingsModal;
@@ -1733,6 +1958,7 @@
         window.saveCloudSettings = saveCloudSettings;
         window.testCloudConnection = testCloudConnection;
         window.saveCandidates = saveCandidates;
+        window.triggerAutoSaveDebounced = triggerAutoSaveDebounced;
 
         // ==================== EXPORT / IMPORT DATABASE BACKUP ====================
         function exportDatabaseBackup() {
@@ -2958,6 +3184,11 @@
                     const currentCandidate = filtered[rowIndex];
                     
                     if (currentCandidate) {
+                        const cId = getCandidateKey(currentCandidate);
+                        currentCandidate.id = cId;
+                        if (!window.dirtyCandidateIds) window.dirtyCandidateIds = new Set();
+                        window.dirtyCandidateIds.add(cId);
+
                         for(let i=0; i<scores.length; i++) {
                             currentCandidate[`score${i+1}`] = (scores[i] && scores[i].value !== '') ? parseInt(scores[i].value) : undefined;
                         }
@@ -3058,8 +3289,8 @@
                         mentionCell.textContent = '';
                         updateRowStrike(false);
                     }
-                    // Auto-save the score silently
-                    saveCandidates(true);
+                    // Auto-save the score debounced for concurrent multi-user safety
+                    triggerAutoSaveDebounced();
                 });
             });
         }
@@ -3334,6 +3565,7 @@
             if (!parsedData || !Array.isArray(parsedData) || parsedData.length === 0) return false;
             
             mockCandidates = parsedData;
+            ensureCandidateIds(mockCandidates);
             
             // Auto assign rooms silently if missing or incomplete
             let needsRoomGen = mockCandidates.some(c => !c.room || c.room === 'ថ្មី' || c.room === '0');
@@ -3481,7 +3713,12 @@
                     const cloudTime = cloudResult.updated_at ? new Date(cloudResult.updated_at).getTime() : 0;
                     if (cloudTime > localTime || !loaded) {
                         // Cloud has newer data or local was empty
-                        loaded = applyCandidatesData(cloudResult.data);
+                        if (loaded && mockCandidates && mockCandidates.length > 0) {
+                            mockCandidates = mergeCandidates(mockCandidates, cloudResult.data, window.dirtyCandidateIds || new Set());
+                            loaded = applyCandidatesData(mockCandidates);
+                        } else {
+                            loaded = applyCandidatesData(cloudResult.data);
+                        }
                         try {
                             localStorage.setItem(config.storageKey, JSON.stringify(mockCandidates));
                             if (cloudResult.updated_at) {
@@ -3489,12 +3726,13 @@
                             }
                         } catch(e) {}
                     } else if (loaded && localTime > cloudTime) {
-                        // Local is newer! Push to cloud in background
-                        saveToSupabase(config.storageKey, mockCandidates, localTimeStr);
+                        // Local is newer! Smart merge with cloud first to avoid destroying other users' data
+                        mockCandidates = mergeCandidates(mockCandidates, cloudResult.data, window.dirtyCandidateIds || new Set());
+                        saveCandidates(true);
                     }
                 } else if (loaded && (!cloudResult || !cloudResult.data || cloudResult.data.length === 0)) {
                     // Cloud has no data for this exam, save local candidates to cloud
-                    saveToSupabase(config.storageKey, mockCandidates, localTimeStr || new Date().toISOString());
+                    saveCandidates(true);
                 }
             } catch(e) {
                 console.warn('Supabase background sync error:', e);
