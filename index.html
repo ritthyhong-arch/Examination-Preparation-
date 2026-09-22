@@ -892,7 +892,7 @@
 
                                 <!-- Room Label -->
                                 <div class="font-moul mb-2">
-                                    <p class="text-red-600 text-lg">បន្ទប់លេខ <span id="scoreRoomNumber">១</span></p>
+                                    <p class="text-red-600 text-lg"><span id="scoreRoomPrefix">បន្ទប់លេខ </span><span id="scoreRoomNumber">១</span></p>
                                     <p class="text-sm text-black">មណ្ឌលប្រឡង៖ សាលាបញ្ញាសាស្ត្រអន្តរជាតិ-សាខាទី៩</p>
                                 </div>
 
@@ -3156,7 +3156,16 @@
                 saveCandidates(true);
             }
             const scoreRoomEl = document.getElementById('scoreRoomNumber');
-            if (scoreRoomEl) scoreRoomEl.textContent = roomNumber === 'all' ? 'ទាំងអស់' : roomNumber;
+            const scoreRoomPrefix = document.getElementById('scoreRoomPrefix');
+            if (scoreRoomEl) {
+                if (roomNumber === 'all') {
+                    scoreRoomEl.textContent = 'បន្ទប់រួម';
+                    if (scoreRoomPrefix) scoreRoomPrefix.style.display = 'none';
+                } else {
+                    scoreRoomEl.textContent = roomNumber;
+                    if (scoreRoomPrefix) scoreRoomPrefix.style.display = 'inline';
+                }
+            }
             renderScoreTableForRoom(roomNumber);
             const msg = roomNumber === 'all' ? 'គ្រប់បន្ទប់ទាំងអស់' : `បន្ទប់លេខ ${roomNumber}`;
             showToast(`កំពុងបើកទម្រង់ពិន្ទុសម្រាប់: ${msg}`, 'info');
