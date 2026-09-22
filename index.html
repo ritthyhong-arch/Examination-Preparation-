@@ -751,6 +751,10 @@
                                     <button class="redo-btn bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-medium px-3 py-2 rounded-lg transition shadow-sm text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center" onclick="redoAction()" title="ធ្វើឡើងវិញ (Ctrl+Y)" disabled>
                                         <i class="fas fa-redo mr-1 text-gray-600"></i> ធ្វើឡើងវិញ
                                     </button>
+                                    <!-- Auto-Save status badge for Results scoring -->
+                                    <div id="scoreAutoSaveIndicator" class="flex items-center px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-xs font-semibold border border-green-200 shadow-sm" title="ប្រព័ន្ធរក្សាទុកស្វ័យប្រវត្តិចូលទៅកាន់ Cloud រាល់ពេលវាយពិន្ទុ">
+                                        <span id="scoreAutoSaveText"><span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>បានរក្សាទុកស្វ័យប្រវត្តិ</span>
+                                    </div>
                                     <button class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="saveCandidates(false)"><i class="fas fa-save mr-1"></i> រក្សាទុក</button>
                                     <button class="admin-only bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="showTop3State()"><i class="fas fa-medal mr-1"></i> Top 3</button>
                                     <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="printScoreSheet()"><i class="fas fa-print mr-1"></i> Print</button>
@@ -1517,17 +1521,35 @@
         function updateAutoSaveIndicator(customText) {
             const el = document.getElementById('autoSaveIndicator');
             const textEl = document.getElementById('autoSaveText');
-            if (!el || !textEl) return;
+            const scoreEl = document.getElementById('scoreAutoSaveIndicator');
+            const scoreTextEl = document.getElementById('scoreAutoSaveText');
             
+            const now = new Date();
+            const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+            
+            let htmlContent = '';
             if (customText) {
-                textEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1.5"></span>${customText}`;
+                if (customText.includes('កំពុង')) {
+                    htmlContent = `<span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1.5 animate-pulse"></span>${customText}`;
+                } else if (customText.includes('សមកាលកម្ម')) {
+                    htmlContent = `<span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span>${customText} (${timeStr})`;
+                } else {
+                    htmlContent = `<span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>${customText}`;
+                }
             } else {
-                const now = new Date();
-                const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
-                textEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>បានរក្សាទុកស្វ័យប្រវត្តិ (${timeStr})`;
+                htmlContent = `<span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>បានរក្សាទុកស្វ័យប្រវត្តិ (${timeStr})`;
             }
-            el.classList.remove('hidden');
-            el.classList.add('flex');
+
+            if (el && textEl) {
+                textEl.innerHTML = htmlContent;
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+            }
+            if (scoreEl && scoreTextEl) {
+                scoreTextEl.innerHTML = htmlContent;
+                scoreEl.classList.remove('hidden');
+                scoreEl.classList.add('flex');
+            }
         }
 
         // ==================== SUPABASE CLOUD INTEGRATION ====================
@@ -2947,6 +2969,9 @@
         }
 
         function filterScoreRoom(roomNumber) {
+            if (window.dirtyCandidateIds && window.dirtyCandidateIds.size > 0) {
+                saveCandidates(true);
+            }
             document.getElementById('scoreRoomNumber').textContent = roomNumber;
             renderScoreTableForRoom(roomNumber);
             showToast(`កំពុងបើកទម្រង់ពិន្ទុសម្រាប់: បន្ទប់លេខ ${roomNumber}`, 'info');
@@ -3128,6 +3153,13 @@
                             updateUndoRedoUI();
                         } catch(e) {}
                         window.preScoreEditSnapshot = null;
+                    }
+                    // Auto-save promptly on input blur if user made edits
+                    if (window.dirtyCandidateIds && window.dirtyCandidateIds.size > 0) {
+                        if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
+                        autoSaveDebounceTimer = setTimeout(() => {
+                            saveCandidates(true);
+                        }, 300);
                     }
                 });
 
@@ -3870,6 +3902,16 @@
         
         window.addEventListener('mouseup', () => {
             window.dragScoreValue = undefined;
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (window.dirtyCandidateIds && window.dirtyCandidateIds.size > 0) {
+                const storageKey = examConfigs[currentExamKey]?.storageKey || 'school_candidates_outstanding';
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
+                    localStorage.setItem(storageKey + '_updated_at', new Date().toISOString());
+                } catch(e) {}
+            }
         });
 
         // Global Keyboard Shortcuts (Ctrl+Z for Undo, Ctrl+Y / Ctrl+Shift+Z for Redo, Ctrl+S for Save, Escape to close modal)
