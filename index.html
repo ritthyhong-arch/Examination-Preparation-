@@ -22,6 +22,8 @@
         #sidebar { transition: transform 0.3s ease-in-out; }
         
         /* សម្រាប់លាក់អ្វីៗផ្សេងពេល Print និងកំណត់ទម្រង់ក្រដាស A4 */
+        .fail-row td { position: relative; }
+        .fail-row td::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; border-top: 1.5px solid #dc2626; z-index: 10; pointer-events: none; }
         @media print {
             @page {
                 size: A4 portrait;
@@ -3758,9 +3760,21 @@
                 
                 let scoreStr = (c.total !== undefined && c.total !== null && !isNaN(c.total)) ? toKhmerNum(c.total) : '-';
                 
+                let idStr = toKhmerNum(index + 1);
+                let seatStr = toKhmerNum(c.seat);
+                
+                let isFail = false;
+                if (c.passed === true) {
+                    // Circle ID and Seat
+                    idStr = `<span class="inline-block border border-blue-800 rounded-full px-1.5 leading-tight">${idStr}</span>`;
+                    seatStr = `<span class="inline-block border border-blue-800 rounded-full px-1.5 leading-tight">${seatStr}</span>`;
+                } else if (c.passed === false) {
+                    isFail = true;
+                }
+                
                 let tds = `
-                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(index + 1)}</td>
-                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.seat)}</td>
+                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${idStr}</td>
+                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${seatStr}</td>
                     <td class="border border-black px-2 py-1 font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.name}</td>
                     <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${(c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'}</td>
                 `;
@@ -3778,15 +3792,16 @@
                     tds += `<td class="border border-black px-2 py-1 text-center font-semibold text-blue-800 text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${scoreStr}</td>`;
                 }
                 
-                tds += `<td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal">${resultStr}</td>`;
+                tds += `<td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${resultStr}</td>`;
                 
                 if (currentExamKey === 'test1') {
-                    tds += `<td class="border border-black px-2 py-1 text-center text-blue-700 font-bold text-[13px] font-normal">${gradeStr}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center text-blue-700 font-bold text-[13px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${gradeStr}</td>`;
                 } else {
-                    tds += `<td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal">${rankStr}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${rankStr}</td>`;
                 }
 
                 const tr = document.createElement('tr');
+                if (isFail) tr.className = 'fail-row text-red-700'; // Make text slightly red for fail rows too
                 tr.innerHTML = tds;
                 tbody.appendChild(tr);
             });
