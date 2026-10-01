@@ -3738,14 +3738,15 @@
                 let rankStr = item.rank !== '-' ? `លេខ ${toKhmerNum(item.rank)}` : '-';
                 
                 let gradeStr = '-';
+                let gradeColor = 'text-gray-800';
                 if (currentExamKey === 'test1' && c.total !== undefined && c.total !== null && !isNaN(c.total)) {
                     const t = Number(c.total);
-                    if (t >= 427) gradeStr = 'A';
-                    else if (t >= 380) gradeStr = 'B';
-                    else if (t >= 332) gradeStr = 'C';
-                    else if (t >= 285) gradeStr = 'D';
-                    else if (t >= 237) gradeStr = 'E';
-                    else gradeStr = 'F';
+                    if (t >= 427) { gradeStr = 'A'; gradeColor = 'text-green-600'; }
+                    else if (t >= 380) { gradeStr = 'B'; gradeColor = 'text-blue-600'; }
+                    else if (t >= 332) { gradeStr = 'C'; gradeColor = 'text-indigo-600'; }
+                    else if (t >= 285) { gradeStr = 'D'; gradeColor = 'text-purple-600'; }
+                    else if (t >= 237) { gradeStr = 'E'; gradeColor = 'text-orange-600'; }
+                    else { gradeStr = 'F'; gradeColor = 'text-red-600'; }
                 }
 
                 let resultStr = '-';
@@ -3795,7 +3796,7 @@
                 tds += `<td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${resultStr}</td>`;
                 
                 if (currentExamKey === 'test1') {
-                    tds += `<td class="border border-black px-2 py-1 text-center text-blue-700 font-bold text-[13px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${gradeStr}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center ${gradeColor} font-bold text-[13px]" style="z-index: 20; position: relative; background-color: transparent;">${gradeStr}</td>`;
                 } else {
                     tds += `<td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${rankStr}</td>`;
                 }
