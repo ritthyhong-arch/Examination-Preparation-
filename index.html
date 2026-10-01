@@ -3738,15 +3738,15 @@
                 let rankStr = item.rank !== '-' ? `លេខ ${toKhmerNum(item.rank)}` : '-';
                 
                 let gradeStr = '-';
-                let gradeColor = 'text-gray-800';
+                let gradeColor = '#1f2937'; // gray-800
                 if (currentExamKey === 'test1' && c.total !== undefined && c.total !== null && !isNaN(c.total)) {
                     const t = Number(c.total);
-                    if (t >= 427) { gradeStr = 'A'; gradeColor = 'text-green-600'; }
-                    else if (t >= 380) { gradeStr = 'B'; gradeColor = 'text-blue-600'; }
-                    else if (t >= 332) { gradeStr = 'C'; gradeColor = 'text-indigo-600'; }
-                    else if (t >= 285) { gradeStr = 'D'; gradeColor = 'text-purple-600'; }
-                    else if (t >= 237) { gradeStr = 'E'; gradeColor = 'text-orange-600'; }
-                    else { gradeStr = 'F'; gradeColor = 'text-red-600'; }
+                    if (t >= 427) { gradeStr = 'A'; gradeColor = '#16a34a'; } // green
+                    else if (t >= 380) { gradeStr = 'B'; gradeColor = '#2563eb'; } // blue
+                    else if (t >= 332) { gradeStr = 'C'; gradeColor = '#9333ea'; } // purple
+                    else if (t >= 285) { gradeStr = 'D'; gradeColor = '#0891b2'; } // cyan
+                    else if (t >= 237) { gradeStr = 'E'; gradeColor = '#ea580c'; } // orange
+                    else { gradeStr = 'F'; gradeColor = '#dc2626'; } // red
                 }
 
                 let resultStr = '-';
@@ -3796,7 +3796,7 @@
                 tds += `<td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${resultStr}</td>`;
                 
                 if (currentExamKey === 'test1') {
-                    tds += `<td class="border border-black px-2 py-1 text-center ${gradeColor} font-bold text-[14px]" style="font-family: 'Times New Roman', Times, serif; z-index: 20; position: relative; background-color: transparent;">${gradeStr}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center text-[14px]" style="color: ${gradeColor}; font-family: 'Times New Roman', Times, serif; font-weight: bold !important; z-index: 20; position: relative; background-color: transparent;">${gradeStr}</td>`;
                 } else {
                     tds += `<td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${rankStr}</td>`;
                 }
