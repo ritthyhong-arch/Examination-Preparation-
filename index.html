@@ -932,7 +932,24 @@
                                 <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-medal text-yellow-500 mr-2"></i> បញ្ជីរាយនាមជ័យលាភី (Top 3)</h3>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <div class="relative">
-                                        <select id="top3SubjectFilter" onchange="renderTop3(this.value)" class="appearance-none bg-white border border-gray-300 text-gray-700 font-medium py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer shadow-sm">
+                                        <select id="top3RoomFilter" onchange="renderTop3()" class="appearance-none bg-white border border-gray-300 text-gray-700 font-medium py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer shadow-sm">
+                                            <option value="all">គ្រប់បន្ទប់</option>
+                                            <option value="១">បន្ទប់លេខ ១</option>
+                                            <option value="២">បន្ទប់លេខ ២</option>
+                                            <option value="៣">បន្ទប់លេខ ៣</option>
+                                            <option value="៤">បន្ទប់លេខ ៤</option>
+                                            <option value="៥">បន្ទប់លេខ ៥</option>
+                                            <option value="៦">បន្ទប់លេខ ៦</option>
+                                            <option value="៧">បន្ទប់លេខ ៧</option>
+                                            <option value="៨">បន្ទប់លេខ ៨</option>
+                                            <option value="៩">បន្ទប់លេខ ៩</option>
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                            <i class="fas fa-filter text-xs"></i>
+                                        </div>
+                                    </div>
+                                    <div class="relative">
+                                        <select id="top3SubjectFilter" onchange="renderTop3()" class="appearance-none bg-white border border-gray-300 text-gray-700 font-medium py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer shadow-sm">
                                         </select>
                                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                                             <i class="fas fa-filter text-xs"></i>
@@ -975,9 +992,11 @@
                                             <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">លេខតុ</th>
                                             <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">គោត្តនាម-នាម</th>
                                             <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ភេទ</th>
-                                            <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ថ្នាក់</th>
+                                            <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">បន្ទប់</th>
                                             <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ឯកទេស</th>
                                             <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">សាខា</th>
+                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ពិន្ទុ</th>
+                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">លទ្ធផល</th>
                                             <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ចំណាត់ថ្នាក់</th>
                                         </tr>
                                     </thead>
@@ -2446,7 +2465,7 @@
                 printTitleRoom: 'បញ្ជីរាយនាមបេក្ខជនប្រឡងសាកល្បងលើកទី១',
                 printTitleAttendance: 'បញ្ជីវត្តមានបេក្ខជនប្រឡងសាកល្បងលើកទី១',
                 printTitleResult: 'បញ្ជីសម្រង់ពិន្ទុប្រឡងសាកល្បងលើកទី១',
-                printTitleTop3: 'បញ្ជីរាយនាមសិស្សជ័យលាភី (ចំណាត់ថ្នាក់លេខ ១ ដល់ ៣)'
+                printTitleTop3: 'លទ្ធផលប្រឡងសាកល្បងលើកទី១'
             }
         };
         window.embeddedExamData = {
@@ -3555,23 +3574,35 @@
             document.getElementById('resultTop3State').classList.remove('hidden');
             setPrintOrientation('portrait');
             
-            const selectTop3Subject = document.getElementById('top3SubjectFilter');
-            if (selectTop3Subject && selectTop3Subject.value) {
-                renderTop3(selectTop3Subject.value);
+            // Sync room filter from scoreInput if it exists
+            const scoreRoom = document.getElementById('scoreRoomFilter');
+            const top3Room = document.getElementById('top3RoomFilter');
+            if (scoreRoom && top3Room && scoreRoom.value) {
+                top3Room.value = scoreRoom.value;
             }
+            
+            renderTop3();
         }
 
-        function getTop3Candidates(subject) {
-            if (!subject) return [];
-            // Filter out candidates in the specified subject who passed
-            let passedCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject && c.passed === true);
+        function getTop3Candidates() {
+            const subjectSelect = document.getElementById('top3SubjectFilter');
+            const roomSelect = document.getElementById('top3RoomFilter');
+            const subject = subjectSelect ? subjectSelect.value : '';
+            const room = roomSelect ? roomSelect.value : 'all';
             
-            // Filter out candidates without a valid total score
-            passedCandidates = passedCandidates.filter(c => c.total !== undefined && c.total !== null);
+            if (!subject) return [];
+            
+            // Filter by subject
+            let filteredCandidates = mockCandidates.filter(c => String(c.subject || '').trim() === subject);
+            
+            // Filter by room if not 'all'
+            if (room && room !== 'all') {
+                filteredCandidates = filteredCandidates.filter(c => String(c.room || '').trim() === room);
+            }
             
             // Group by grade
             let candidatesByGrade = {};
-            passedCandidates.forEach(c => {
+            filteredCandidates.forEach(c => {
                 let g = extractGradeNumber(c.grade);
                 if (!candidatesByGrade[g]) candidatesByGrade[g] = [];
                 candidatesByGrade[g].push(c);
@@ -3580,50 +3611,57 @@
             // Sort grades ascending
             let sortedGrades = Object.keys(candidatesByGrade).map(Number).sort((a, b) => a - b);
             
-            let finalTop3 = [];
+            let finalResults = [];
             sortedGrades.forEach(g => {
                 let gradeCandidates = candidatesByGrade[g];
                 // Sort descending by total score
                 gradeCandidates.sort((a, b) => {
-                    const scoreA = (a.total !== undefined && a.total !== null) ? Number(a.total) : 0;
-                    const scoreB = (b.total !== undefined && b.total !== null) ? Number(b.total) : 0;
+                    const scoreA = (a.total !== undefined && a.total !== null && !isNaN(a.total)) ? Number(a.total) : -1;
+                    const scoreB = (b.total !== undefined && b.total !== null && !isNaN(b.total)) ? Number(b.total) : -1;
                     return scoreB - scoreA;
                 });
                 
-                // Assign ranks (1, 2, 3) where equal scores share the same rank and all tied candidates are included
+                // Assign ranks
                 let currentRank = 0;
                 let prevScore = null;
 
                 for (let i = 0; i < gradeCandidates.length; i++) {
                     const c = gradeCandidates[i];
-                    const score = (c.total !== undefined && c.total !== null) ? Number(c.total) : 0;
+                    const score = (c.total !== undefined && c.total !== null && !isNaN(c.total)) ? Number(c.total) : null;
                     
-                    if (prevScore === null || score !== prevScore) {
-                        currentRank++;
-                        prevScore = score;
+                    if (score !== null) {
+                        if (prevScore === null || score !== prevScore) {
+                            currentRank++;
+                            prevScore = score;
+                        }
                     }
                     
-                    // If rank is within top 3 (1, 2, 3), include this candidate!
-                    if (currentRank <= 3) {
-                        finalTop3.push({ candidate: c, rank: currentRank });
-                    } else {
-                        break;
-                    }
+                    finalResults.push({ candidate: c, rank: score !== null ? currentRank : '-' });
                 }
             });
 
-            return finalTop3;
+            return finalResults;
         }
 
-        function renderTop3(subject) {
-            document.getElementById('top3SubjectLabel').textContent = subject;
+        function renderTop3() {
+            const subjectSelect = document.getElementById('top3SubjectFilter');
+            const subject = subjectSelect ? subjectSelect.value : '';
+            const roomSelect = document.getElementById('top3RoomFilter');
+            const room = roomSelect ? roomSelect.value : 'all';
+            
+            let label = subject;
+            if (room !== 'all') {
+                label += ` (បន្ទប់លេខ ${room})`;
+            }
+            
+            document.getElementById('top3SubjectLabel').textContent = label;
             const tbody = document.getElementById('top3TableBody');
             
-            const finalTop3 = getTop3Candidates(subject);
+            const finalResults = getTop3Candidates();
 
             tbody.innerHTML = '';
-            if (finalTop3.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="border border-black px-1 py-6 text-center text-gray-500" style="font-family: \'Khmer OS Siemreap\', \'Siemreap\', sans-serif; font-size: 12px;">មិនទាន់មានទិន្នន័យជ័យលាភីទេ</td></tr>';
+            if (finalResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="border border-black px-1 py-6 text-center text-gray-500" style="font-family: \'Khmer OS Siemreap\', \'Siemreap\', sans-serif; font-size: 12px;">មិនទាន់មានទិន្នន័យទេ</td></tr>';
                 const totalEl = document.getElementById('top3TotalCandidates');
                 if (totalEl) totalEl.textContent = toKhmerNum(0);
                 const femaleEl = document.getElementById('top3FemaleCandidates');
@@ -3632,19 +3670,28 @@
                 return;
             }
 
-            const top3Total = finalTop3.length;
-            const top3Females = finalTop3.filter(item => item.candidate && (item.candidate.gender === 'F' || item.candidate.gender === 'ស្រី')).length;
+            const totalCount = finalResults.length;
+            const femaleCount = finalResults.filter(item => item.candidate && (item.candidate.gender === 'F' || item.candidate.gender === 'ស្រី')).length;
             const totalEl = document.getElementById('top3TotalCandidates');
-            if (totalEl) totalEl.textContent = toKhmerNum(top3Total);
+            if (totalEl) totalEl.textContent = toKhmerNum(totalCount);
             const femaleEl = document.getElementById('top3FemaleCandidates');
-            if (femaleEl) femaleEl.textContent = toKhmerNum(top3Females);
+            if (femaleEl) femaleEl.textContent = toKhmerNum(femaleCount);
 
-            finalTop3.forEach((item, index) => {
+            finalResults.forEach((item, index) => {
                 const c = item.candidate;
-                let rankStr = '';
-                if (item.rank === 1) rankStr = 'លេខ ១';
-                if (item.rank === 2) rankStr = 'លេខ ២';
-                if (item.rank === 3) rankStr = 'លេខ ៣';
+                let rankStr = item.rank !== '-' ? `លេខ ${toKhmerNum(item.rank)}` : '-';
+                
+                let resultStr = '-';
+                let resultColor = '';
+                if (c.passed === true) {
+                    resultStr = 'ជាប់';
+                    resultColor = 'text-green-600';
+                } else if (c.passed === false) {
+                    resultStr = 'ធ្លាក់';
+                    resultColor = 'text-red-600';
+                }
+                
+                let scoreStr = (c.total !== undefined && c.total !== null && !isNaN(c.total)) ? toKhmerNum(c.total) : '-';
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -3652,10 +3699,12 @@
                     <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.seat)}</td>
                     <td class="border border-black px-2 py-1 font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.name}</td>
                     <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${(c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'}</td>
-                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(extractGradeNumber(c.grade))}</td>
+                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.room || '')}</td>
                     <td class="border border-black px-2 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.subject}</td>
                     <td class="border border-black px-2 py-1 text-center whitespace-nowrap font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.school}</td>
-                    <td class="border border-black px-2 py-1 text-center text-red-600 font-moul text-[12px] font-normal">${rankStr}</td>
+                    <td class="border border-black px-2 py-1 text-center font-semibold text-blue-800 text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${scoreStr}</td>
+                    <td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal">${resultStr}</td>
+                    <td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal">${rankStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -3664,26 +3713,34 @@
 
         function exportTop3ToExcel() {
             const subjectSelect = document.getElementById('top3SubjectFilter');
+            const roomSelect = document.getElementById('top3RoomFilter');
             const subject = subjectSelect ? subjectSelect.value : '';
+            const room = roomSelect ? roomSelect.value : 'all';
+            
             if (!subject) {
                 showToast('សូមជ្រើសរើសមុខវិជ្ជាជាមុនសិន', 'warning');
                 return;
             }
 
-            const finalTop3 = getTop3Candidates(subject);
+            const finalResults = getTop3Candidates();
 
-            if (finalTop3.length === 0) {
-                showToast('មិនមានទិន្នន័យជ័យលាភីសម្រាប់ទាញយកទេ', 'error');
+            if (finalResults.length === 0) {
+                showToast('មិនមានទិន្នន័យសម្រាប់ទាញយកទេ', 'error');
                 return;
             }
 
-            const top3Total = finalTop3.length;
-            const top3Females = finalTop3.filter(item => item.candidate && (item.candidate.gender === 'F' || item.candidate.gender === 'ស្រី')).length;
+            const totalCount = finalResults.length;
+            const femaleCount = finalResults.filter(item => item.candidate && (item.candidate.gender === 'F' || item.candidate.gender === 'ស្រី')).length;
 
             const lunarDateText = document.getElementById('top3LunarDateText')?.innerText?.trim() || '';
             const solarDateText = document.getElementById('top3KhmerSolarDate')?.innerText?.trim() || '';
 
             const wb = XLSX.utils.book_new();
+
+            let subjectLabel = `មុខវិជ្ជា៖ ${subject}`;
+            if (room !== 'all') {
+                subjectLabel += ` (បន្ទប់លេខ ${room})`;
+            }
 
             let excelData = [
                 ['ព្រះរាជាណាចក្រកម្ពុជា'],
@@ -3691,38 +3748,43 @@
                 ['មន្ទីរអប់រំ យុវជន និង កីឡារាជធានីភ្នំពេញ'],
                 ['សាលាបញ្ញាសាស្ត្រអន្តរជាតិ'],
                 [],
-                ['លទ្ធផលប្រឡងសាកល្បងលើកទី១'],
+                [examConfigs[currentExamKey] ? examConfigs[currentExamKey].printTitleTop3 : 'លទ្ធផលប្រឡងសាកល្បងលើកទី១'],
                 ['សម័យប្រឡង៖ ថ្ងៃទី២១ ខែ កញ្ញា ឆ្នាំ ២០២៦'],
-                [`មុខវិជ្ជា៖ ${subject}`],
+                [subjectLabel],
                 [],
-                ['ល.រ', 'លេខតុ', 'គោត្តនាម-នាម', 'ភេទ', 'ថ្នាក់', 'ឯកទេស', 'សាខា', 'ចំណាត់ថ្នាក់']
+                ['ល.រ', 'លេខតុ', 'គោត្តនាម-នាម', 'ភេទ', 'បន្ទប់', 'ឯកទេស', 'សាខា', 'ពិន្ទុ', 'លទ្ធផល', 'ចំណាត់ថ្នាក់']
             ];
 
-            finalTop3.forEach((item, index) => {
+            finalResults.forEach((item, index) => {
                 const c = item.candidate;
-                let rankStr = '';
-                if (item.rank === 1) rankStr = 'លេខ ១';
-                else if (item.rank === 2) rankStr = 'លេខ ២';
-                else if (item.rank === 3) rankStr = 'លេខ ៣';
+                let rankStr = item.rank !== '-' ? `លេខ ${toKhmerNum(item.rank)}` : '-';
+                
+                let resultStr = '-';
+                if (c.passed === true) resultStr = 'ជាប់';
+                else if (c.passed === false) resultStr = 'ធ្លាក់';
+                
+                let scoreStr = (c.total !== undefined && c.total !== null && !isNaN(c.total)) ? toKhmerNum(c.total) : '-';
 
                 excelData.push([
                     toKhmerNum(index + 1),
                     toKhmerNum(c.seat),
                     c.name || '',
                     (c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស',
-                    toKhmerNum(extractGradeNumber(c.grade)),
+                    toKhmerNum(c.room || ''),
                     c.subject || '',
                     c.school || '',
+                    scoreStr,
+                    resultStr,
                     rankStr
                 ]);
             });
 
             excelData.push([]);
-            excelData.push([`បញ្ឈប់បញ្ជីត្រឹមចំនួនបេក្ខជនសរុប៖ ${toKhmerNum(top3Total)} នាក់ ស្រី ${toKhmerNum(top3Females)} នាក់`]);
+            excelData.push([`បញ្ឈប់បញ្ជីត្រឹមចំនួនបេក្ខជនសរុប៖ ${toKhmerNum(totalCount)} នាក់ ស្រី ${toKhmerNum(femaleCount)} នាក់`]);
             excelData.push([]);
-            excelData.push(['ហត្ថលេខា និងឈ្មោះអ្នកចុះជាប់ធ្លាក់ចុងក្រោយ', '', '', '', '', lunarDateText]);
-            excelData.push(['', '', '', '', '', `រាជធានីភ្នំពេញ ${solarDateText}`]);
-            excelData.push(['', '', '', '', '', 'នាយកសាលា']);
+            excelData.push(['ហត្ថលេខា និងឈ្មោះអ្នកចុះជាប់ធ្លាក់ចុងក្រោយ', '', '', '', '', '', '', lunarDateText]);
+            excelData.push(['', '', '', '', '', '', '', `រាជធានីភ្នំពេញ ${solarDateText}`]);
+            excelData.push(['', '', '', '', '', '', '', 'នាយកសាលា']);
 
             const ws = XLSX.utils.aoa_to_sheet(excelData);
 
@@ -3732,13 +3794,15 @@
                 { wch: 12 }, // លេខតុ
                 { wch: 25 }, // គោត្តនាម-នាម
                 { wch: 10 }, // ភេទ
-                { wch: 10 }, // ថ្នាក់
+                { wch: 10 }, // បន្ទប់
                 { wch: 20 }, // ឯកទេស
                 { wch: 25 }, // សាខា
+                { wch: 10 }, // ពិន្ទុ
+                { wch: 12 }, // លទ្ធផល
                 { wch: 15 }  // ចំណាត់ថ្នាក់
             ];
 
-            let cleanSheetName = `Top3_${subject}`.replace(/[\\/*?:[\]]/g, '');
+            let cleanSheetName = `Results_${subject}`.replace(/[\\/*?:[\]]/g, '');
             if (cleanSheetName.length > 31) cleanSheetName = cleanSheetName.substring(0, 31);
 
             XLSX.utils.book_append_sheet(wb, ws, cleanSheetName);
