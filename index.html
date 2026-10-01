@@ -995,17 +995,7 @@
                                 <!-- Table -->
                                 <table class="w-full border-collapse border border-black text-[12px] mb-3" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">
                                     <thead>
-                                        <tr class="text-center bg-gray-50">
-                                            <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ល.រ</th>
-                                            <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">លេខតុ</th>
-                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">គោត្តនាម-នាម</th>
-                                            <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ភេទ</th>
-                                            <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">បន្ទប់</th>
-                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ឯកទេស</th>
-                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">សាខា</th>
-                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ពិន្ទុ</th>
-                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">លទ្ធផល</th>
-                                            <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ចំណាត់ថ្នាក់</th>
+                                        <tr class="text-center bg-gray-50" id="top3TableHeaderRow">
                                         </tr>
                                     </thead>
                                     <tbody id="top3TableBody">
@@ -3671,13 +3661,46 @@
             const printRoomEl = document.getElementById('printTop3RoomNumber');
             if (printRoomEl) printRoomEl.textContent = room === 'all' ? 'គ្រប់បន្ទប់' : room;
             
+            const theadTr = document.getElementById('top3TableHeaderRow');
+            if (theadTr) {
+                let ths = `
+                    <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ល.រ</th>
+                    <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">លេខតុ</th>
+                    <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">គោត្តនាម-នាម</th>
+                    <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ភេទ</th>
+                `;
+                
+                if (currentExamKey !== 'test1') {
+                    ths += `<th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">បន្ទប់</th>`;
+                }
+                
+                ths += `
+                    <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ឯកទេស</th>
+                    <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">សាខា</th>
+                `;
+                
+                if (currentExamKey !== 'test1') {
+                    ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ពិន្ទុ</th>`;
+                }
+                
+                ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">លទ្ធផល</th>`;
+                
+                if (currentExamKey === 'test1') {
+                    ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">និទ្ទេស</th>`;
+                } else {
+                    ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ចំណាត់ថ្នាក់</th>`;
+                }
+                theadTr.innerHTML = ths;
+            }
+
             const tbody = document.getElementById('top3TableBody');
             
             const finalResults = getTop3Candidates();
 
             tbody.innerHTML = '';
             if (finalResults.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="border border-black px-1 py-6 text-center text-gray-500" style="font-family: \'Khmer OS Siemreap\', \'Siemreap\', sans-serif; font-size: 12px;">មិនទាន់មានទិន្នន័យទេ</td></tr>';
+                const colSpan = currentExamKey === 'test1' ? 8 : 10;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="border border-black px-1 py-6 text-center text-gray-500" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">មិនទាន់មានទិន្នន័យទេ</td></tr>`;
                 const totalEl = document.getElementById('top3TotalCandidates');
                 if (totalEl) totalEl.textContent = toKhmerNum(0);
                 const femaleEl = document.getElementById('top3FemaleCandidates');
@@ -3697,6 +3720,17 @@
                 const c = item.candidate;
                 let rankStr = item.rank !== '-' ? `លេខ ${toKhmerNum(item.rank)}` : '-';
                 
+                let gradeStr = '-';
+                if (currentExamKey === 'test1' && c.total !== undefined && c.total !== null && !isNaN(c.total)) {
+                    const t = Number(c.total);
+                    if (t >= 427) gradeStr = 'A';
+                    else if (t >= 380) gradeStr = 'B';
+                    else if (t >= 332) gradeStr = 'C';
+                    else if (t >= 285) gradeStr = 'D';
+                    else if (t >= 237) gradeStr = 'E';
+                    else gradeStr = 'F';
+                }
+
                 let resultStr = '-';
                 let resultColor = '';
                 if (c.passed === true) {
@@ -3709,19 +3743,36 @@
                 
                 let scoreStr = (c.total !== undefined && c.total !== null && !isNaN(c.total)) ? toKhmerNum(c.total) : '-';
                 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
+                let tds = `
                     <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(index + 1)}</td>
                     <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.seat)}</td>
                     <td class="border border-black px-2 py-1 font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.name}</td>
                     <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${(c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'}</td>
-                    <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.room || '')}</td>
+                `;
+                
+                if (currentExamKey !== 'test1') {
+                    tds += `<td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.room || '')}</td>`;
+                }
+                
+                tds += `
                     <td class="border border-black px-2 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.subject}</td>
                     <td class="border border-black px-2 py-1 text-center whitespace-nowrap font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.school}</td>
-                    <td class="border border-black px-2 py-1 text-center font-semibold text-blue-800 text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${scoreStr}</td>
-                    <td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal">${resultStr}</td>
-                    <td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal">${rankStr}</td>
                 `;
+                
+                if (currentExamKey !== 'test1') {
+                    tds += `<td class="border border-black px-2 py-1 text-center font-semibold text-blue-800 text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${scoreStr}</td>`;
+                }
+                
+                tds += `<td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal">${resultStr}</td>`;
+                
+                if (currentExamKey === 'test1') {
+                    tds += `<td class="border border-black px-2 py-1 text-center text-blue-700 font-bold text-[13px] font-normal">${gradeStr}</td>`;
+                } else {
+                    tds += `<td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal">${rankStr}</td>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = tds;
                 tbody.appendChild(tr);
             });
             setAutoDates();
@@ -3751,6 +3802,14 @@
             // Room string for top left
             let roomString = room !== 'all' ? `បន្ទប់លេខ ${room}` : 'គ្រប់បន្ទប់';
 
+            let headers = ['ល.រ', 'លេខតុ', 'គោត្តនាម-នាម', 'ភេទ'];
+            if (currentExamKey !== 'test1') headers.push('បន្ទប់');
+            headers.push('ឯកទេស', 'សាខា');
+            if (currentExamKey !== 'test1') headers.push('ពិន្ទុ');
+            headers.push('លទ្ធផល');
+            if (currentExamKey === 'test1') headers.push('និទ្ទេស');
+            else headers.push('ចំណាត់ថ្នាក់');
+
             let excelData = [
                 ['ព្រះរាជាណាចក្រកម្ពុជា'],
                 ['ជាតិ សាសនា ព្រះមហាក្សត្រ'],
@@ -3761,31 +3820,46 @@
                 [`សម័យប្រឡង៖ ${solarDateText}`],
                 [roomString, 'មណ្ឌលប្រឡង៖ សាលាបញ្ញាសាស្ត្រអន្តរជាតិ-សាខាទី៩'],
                 [],
-                ['ល.រ', 'លេខតុ', 'គោត្តនាម-នាម', 'ភេទ', 'បន្ទប់', 'ឯកទេស', 'សាខា', 'ពិន្ទុ', 'លទ្ធផល', 'ចំណាត់ថ្នាក់']
+                headers
             ];
 
             finalResults.forEach((item, index) => {
                 const c = item.candidate;
                 let rankStr = item.rank !== '-' ? `លេខ ${toKhmerNum(item.rank)}` : '-';
                 
+                let gradeStr = '-';
+                if (currentExamKey === 'test1' && c.total !== undefined && c.total !== null && !isNaN(c.total)) {
+                    const t = Number(c.total);
+                    if (t >= 427) gradeStr = 'A';
+                    else if (t >= 380) gradeStr = 'B';
+                    else if (t >= 332) gradeStr = 'C';
+                    else if (t >= 285) gradeStr = 'D';
+                    else if (t >= 237) gradeStr = 'E';
+                    else gradeStr = 'F';
+                }
+
                 let resultStr = '-';
                 if (c.passed === true) resultStr = 'ជាប់';
                 else if (c.passed === false) resultStr = 'ធ្លាក់';
                 
                 let scoreStr = (c.total !== undefined && c.total !== null && !isNaN(c.total)) ? toKhmerNum(c.total) : '-';
 
-                excelData.push([
+                let rowData = [
                     toKhmerNum(index + 1),
                     toKhmerNum(c.seat),
                     c.name || '',
-                    (c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស',
-                    toKhmerNum(c.room || ''),
-                    c.subject || '',
-                    c.school || '',
-                    scoreStr,
-                    resultStr,
-                    rankStr
-                ]);
+                    (c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'
+                ];
+                
+                if (currentExamKey !== 'test1') rowData.push(toKhmerNum(c.room || ''));
+                rowData.push(c.subject || '', c.school || '');
+                if (currentExamKey !== 'test1') rowData.push(scoreStr);
+                rowData.push(resultStr);
+                
+                if (currentExamKey === 'test1') rowData.push(gradeStr);
+                else rowData.push(rankStr);
+                
+                excelData.push(rowData);
             });
 
             excelData.push([]);
