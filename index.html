@@ -3591,8 +3591,8 @@
             
             let filteredCandidates = mockCandidates;
             
-            // Filter by subject if provided and not empty
-            if (subject && subject !== 'all') {
+            // Filter by subject if provided and not empty (IGNORE subject filter for test1)
+            if (currentExamKey !== 'test1' && subject && subject !== 'all') {
                 filteredCandidates = filteredCandidates.filter(c => String(c.subject || '').trim() === subject);
             }
             
