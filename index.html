@@ -969,23 +969,27 @@
                             <div class="bg-white shadow-xl mx-auto px-8 pt-6 pb-8 border border-gray-200 text-black overflow-hidden" style="width: 210mm; max-width: 100%; box-sizing: border-box;" id="printableTop3Paper">
                                 <!-- Top Header Section -->
                                 <div class="relative mb-3 text-black">
-                                    <!-- Kingdom Header -->
                                     <div class="absolute top-0 right-0 text-center font-moul">
-                                        <p class="text-[15px] mb-0.5">ព្រះរាជាណាចក្រកម្ពុជា</p>
-                                        <p class="text-[14px]">ជាតិ សាសនា ព្រះមហាក្សត្រ</p>
+                                        <p class="text-[17px] mb-1">ព្រះរាជាណាចក្រកម្ពុជា</p>
+                                        <p class="text-[16px]">ជាតិ សាសនា ព្រះមហាក្សត្រ</p>
                                     </div>
-                                    <!-- Ministry Header -->
-                                    <div class="pt-4 text-left font-moul text-[14px]">
+                                    
+                                    <div class="pt-12 text-left font-moul text-[15px]">
                                         <p>មន្ទីរអប់រំ យុវជន និង កីឡារាជធានីភ្នំពេញ</p>
                                         <p>សាលាបញ្ញាសាស្ត្រអន្តរជាតិ</p>
                                     </div>
                                 </div>
 
                                 <!-- Center Title -->
-                                <div class="text-center mb-3 text-black font-moul mt-2">
+                                <div class="text-center mb-4 text-black font-moul mt-3">
                                     <h2 id="printTitleTop3" class="text-[17px] mb-2">លទ្ធផលប្រឡងសាកល្បងលើកទី១</h2>
-                                    <h3 class="text-[16px]">សម័យប្រឡង៖ ថ្ងៃទី២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</h3>
-                                    <h3 class="text-[16px] mt-2 text-blue-800">មុខវិជ្ជា៖ <span id="top3SubjectLabel"></span></h3>
+                                    <h3 class="text-[16px]">សម័យប្រឡង៖ <span id="top3KhmerSolarDateHeader">ថ្ងៃទី ២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</span></h3>
+                                </div>
+
+                                <!-- Room specific info -->
+                                <div class="text-left font-moul text-[15px] mb-2 text-black">
+                                    <p class="text-red-600">បន្ទប់លេខ <span id="printTop3RoomNumber">១</span></p>
+                                    <p>មណ្ឌលប្រឡង៖ សាលាបញ្ញាសាស្ត្រអន្តរជាតិ-សាខាទី៩</p>
                                 </div>
 
                                 <!-- Table -->
@@ -1021,7 +1025,7 @@
                                         </div>
                                         <div class="text-center min-w-[260px]">
                                             <p id="top3LunarDateText" class="text-[12px] whitespace-nowrap cursor-pointer hover:bg-yellow-50 rounded px-1 transition" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;" title="ចុចដើម្បីកែប្រែកាលបរិច្ឆេទប្រសិនបើចាំបាច់" contenteditable="true">ថ្ងៃ...</p>
-                                            <p class="mt-0.5 text-[12px] whitespace-nowrap" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">រាជធានីភ្នំពេញ <span id="top3KhmerSolarDate" class="cursor-pointer hover:bg-yellow-50 rounded px-1 transition" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;" title="ចុចដើម្បីកែប្រែកាលបរិច្ឆេទប្រសិនបើចាំបាច់" contenteditable="true">ថ្ងៃទី... ខែ... ឆ្នាំ...</span></p>
+                                            <p class="mt-0.5 text-[12px] whitespace-nowrap" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">រាជធានីភ្នំពេញ <span id="top3KhmerSolarDateSignature" class="cursor-pointer hover:bg-yellow-50 rounded px-1 transition" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;" title="ចុចដើម្បីកែប្រែកាលបរិច្ឆេទប្រសិនបើចាំបាច់" contenteditable="true">ថ្ងៃទី... ខែ... ឆ្នាំ...</span></p>
                                             <p class="font-moul text-[15px] mt-2">នាយកសាលា</p>
                                             <div class="top3-sign-space" style="height: 60px;"></div>
                                         </div>
@@ -2571,14 +2575,15 @@
             
             const dateString = `ថ្ងៃទី ${day} ខែ ${month} ឆ្នាំ ${year}`;
             
-            const top3DateEl = document.getElementById('top3KhmerSolarDate');
-            if(top3DateEl) top3DateEl.textContent = dateString;
+            ['khmerSolarDate', 'attendanceKhmerSolarDate', 'scoreKhmerSolarDate', 'top3KhmerSolarDateHeader'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = dateString;
+            });
             
-            const signatureDateEl = document.getElementById('khmerSolarDateSignature');
-            if(signatureDateEl) signatureDateEl.innerHTML = dateString;
-            
-            const attendanceSignatureDateEl = document.getElementById('attendanceKhmerSolarDateSignature');
-            if(attendanceSignatureDateEl) attendanceSignatureDateEl.innerHTML = dateString;
+            ['khmerSolarDateSignature', 'attendanceKhmerSolarDateSignature', 'top3KhmerSolarDateSignature'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = dateString;
+            });
 
             const top3LunarEl = document.getElementById('top3LunarDateText');
             if (top3LunarEl) {
@@ -3660,7 +3665,12 @@
                 label += ` (បន្ទប់លេខ ${room})`;
             }
             
-            document.getElementById('top3SubjectLabel').textContent = label;
+            const subjEl = document.getElementById('top3SubjectLabel');
+            if (subjEl) subjEl.textContent = label;
+            
+            const printRoomEl = document.getElementById('printTop3RoomNumber');
+            if (printRoomEl) printRoomEl.textContent = room === 'all' ? 'គ្រប់បន្ទប់' : room;
+            
             const tbody = document.getElementById('top3TableBody');
             
             const finalResults = getTop3Candidates();
@@ -3734,14 +3744,12 @@
             const femaleCount = finalResults.filter(item => item.candidate && (item.candidate.gender === 'F' || item.candidate.gender === 'ស្រី')).length;
 
             const lunarDateText = document.getElementById('top3LunarDateText')?.innerText?.trim() || '';
-            const solarDateText = document.getElementById('top3KhmerSolarDate')?.innerText?.trim() || '';
+            const solarDateText = document.getElementById('top3KhmerSolarDateHeader')?.innerText?.trim() || '';
 
             const wb = XLSX.utils.book_new();
 
-            let subjectLabel = `មុខវិជ្ជា៖ ${subject ? subject : 'គ្រប់មុខវិជ្ជា'}`;
-            if (room !== 'all') {
-                subjectLabel += ` (បន្ទប់លេខ ${room})`;
-            }
+            // Room string for top left
+            let roomString = room !== 'all' ? `បន្ទប់លេខ ${room}` : 'គ្រប់បន្ទប់';
 
             let excelData = [
                 ['ព្រះរាជាណាចក្រកម្ពុជា'],
@@ -3750,8 +3758,8 @@
                 ['សាលាបញ្ញាសាស្ត្រអន្តរជាតិ'],
                 [],
                 [examConfigs[currentExamKey] ? examConfigs[currentExamKey].printTitleTop3 : 'លទ្ធផលប្រឡងសាកល្បងលើកទី១'],
-                ['សម័យប្រឡង៖ ថ្ងៃទី២១ ខែ កញ្ញា ឆ្នាំ ២០២៦'],
-                [subjectLabel],
+                [`សម័យប្រឡង៖ ${solarDateText}`],
+                [roomString, 'មណ្ឌលប្រឡង៖ សាលាបញ្ញាសាស្ត្រអន្តរជាតិ-សាខាទី៩'],
                 [],
                 ['ល.រ', 'លេខតុ', 'គោត្តនាម-នាម', 'ភេទ', 'បន្ទប់', 'ឯកទេស', 'សាខា', 'ពិន្ទុ', 'លទ្ធផល', 'ចំណាត់ថ្នាក់']
             ];
