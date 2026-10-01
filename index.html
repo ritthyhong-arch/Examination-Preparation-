@@ -4077,18 +4077,24 @@
             document.getElementById('attendanceGeneratedData').classList.add('hidden');
             document.getElementById('attendanceTableBody').innerHTML = '';
             
-            // Clear Score table (using examAll info for now, but if there's a score section, we clear it)
-            // Wait, Score is just examAllTableBody.
+            // Clear Score/Result Input table
+            const resultEmpty = document.getElementById('resultEmptyState');
+            if (resultEmpty) resultEmpty.classList.remove('hidden');
+            const resultInput = document.getElementById('resultInputState');
+            if (resultInput) resultInput.classList.add('hidden');
+            const scoreTbody = document.getElementById('scoreTableBody');
+            if (scoreTbody) scoreTbody.innerHTML = '';
             
             // Clear Top3 table
-            document.getElementById('top3TableBody').innerHTML = '<tr><td colspan="8" class="border border-black px-1 py-6 text-center text-gray-500">មិនទាន់មានទិន្នន័យទេ</td></tr>';
+            const top3Tbody = document.getElementById('top3TableBody');
+            if (top3Tbody) top3Tbody.innerHTML = '<tr><td colspan="10" class="border border-black px-1 py-6 text-center text-gray-500">មិនទាន់មានទិន្នន័យទេ</td></tr>';
             
             // Clear Dashboard
             if (myBarChart) { myBarChart.destroy(); myBarChart = null; }
             if (myPieChart) { myPieChart.destroy(); myPieChart = null; }
             
             // Clear Dropdowns
-            ['roomFilterSelect', 'attendanceRoomFilterSelect', 'scoreRoomFilter'].forEach(id => {
+            ['roomFilterSelect', 'attendanceRoomFilterSelect', 'scoreRoomFilter', 'top3RoomFilter'].forEach(id => {
                 let el = document.getElementById(id);
                 if (el) el.innerHTML = '<option value="all">មិនមានបន្ទប់</option>';
             });
@@ -4224,6 +4230,18 @@
                 const attGen = document.getElementById('attendanceGeneratedData');
                 if (attGen) attGen.classList.remove('hidden');
                 
+                const resultEmpty = document.getElementById('resultEmptyState');
+                if (resultEmpty) resultEmpty.classList.add('hidden');
+                
+                // Only show resultInputState if we are not already in resultTop3State
+                const top3State = document.getElementById('resultTop3State');
+                const isTop3Active = top3State && !top3State.classList.contains('hidden');
+                
+                if (!isTop3Active) {
+                    const resultInput = document.getElementById('resultInputState');
+                    if (resultInput) resultInput.classList.remove('hidden');
+                }
+                
                 let firstRoom = toKhmerNum(1);
                 if (selectRoom) selectRoom.value = firstRoom;
                 
@@ -4326,8 +4344,7 @@
             }
 
             // 5. If no candidates found anywhere, show empty state
-            if (!loaded) {
-                mockCandidates = [];
+            if (!loaded && mockCandidates.length === 0) {
                 resetAllUI();
             }
             
@@ -4399,6 +4416,10 @@
             undoStack = [];
             redoStack = [];
             updateUndoRedoUI();
+            
+            // Clear current data from UI to prevent bleeding before loading completes
+            mockCandidates = [];
+            resetAllUI();
             
             // Reload data for this exam
             loadExamData();
