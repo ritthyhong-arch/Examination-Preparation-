@@ -2566,10 +2566,11 @@
             const year = toKhmerNum(date.getFullYear());
             
             const dateString = `ថ្ងៃទី ${day} ខែ ${month} ឆ្នាំ ${year}`;
+            const examDateString = 'ថ្ងៃទី ៧ ខែ ធ្នូ ឆ្នាំ ២០២៦';
             
             ['khmerSolarDate', 'attendanceKhmerSolarDate', 'scoreKhmerSolarDate', 'top3KhmerSolarDateHeader'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.textContent = dateString;
+                if (el) el.textContent = examDateString;
             });
             
             ['khmerSolarDateSignature', 'attendanceKhmerSolarDateSignature', 'top3KhmerSolarDateSignature'].forEach(id => {
