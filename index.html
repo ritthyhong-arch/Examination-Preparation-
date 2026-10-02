@@ -3022,7 +3022,7 @@
                     if (printRoomEl) printRoomEl.textContent = curRoom;
                     renderTableForRoom(curRoom);
                 } else if (tabId === 'exam-attendance') {
-                    setPrintOrientation('landscape');
+                    setPrintOrientation('portrait');
                     const aEmpty = document.getElementById('attendanceEmptyState');
                     if (aEmpty) aEmpty.classList.add('hidden');
                     const aGen = document.getElementById('attendanceGeneratedData');
