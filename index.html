@@ -284,7 +284,6 @@
         #printableTop3Paper table th,
         #printableTop3Paper table td {
             font-size: 12px !important;
-            font-weight: normal !important;
         }
         #printableTop3Paper table th {
             font-family: 'Moul', cursive !important;
@@ -535,7 +534,7 @@
                             <button class="exam-tab-btn admin-only px-6 py-4 text-sm font-medium text-gray-500 hover:text-blue-600 hover:bg-white outline-none transition whitespace-nowrap" onclick="switchExamTab(event, 'exam-all')"><i class="fas fa-list-ul mr-1"></i> បញ្ជីរាយនាមបេក្ខជនរួម</button>
                             <button class="exam-tab-btn admin-only px-6 py-4 text-sm font-medium text-gray-500 hover:text-blue-600 hover:bg-white outline-none transition whitespace-nowrap" onclick="switchExamTab(event, 'exam-room')"><i class="fas fa-door-closed mr-1"></i> បញ្ជីរាយនាមតាមបន្ទប់</button>
                             <button class="exam-tab-btn admin-only px-6 py-4 text-sm font-medium text-gray-500 hover:text-blue-600 hover:bg-white outline-none transition whitespace-nowrap" onclick="switchExamTab(event, 'exam-attendance')"><i class="fas fa-clipboard-list mr-1"></i> បញ្ជីវត្តមានតាមបន្ទប់</button>
-                            <button class="exam-tab-btn active px-6 py-4 text-sm font-bold text-blue-600 border-b-2 border-blue-600 outline-none whitespace-nowrap transition" onclick="switchExamTab(event, 'exam-results')"><i class="fas fa-trophy mr-1"></i> បញ្ជីសម្រង់ពិន្ទុ</button>
+                            <button class="exam-tab-btn active px-6 py-4 text-sm font-bold text-blue-600 border-b-2 border-blue-600 outline-none whitespace-nowrap transition" onclick="switchExamTab(event, 'exam-results')"><i class="fas fa-trophy mr-1"></i> លទ្ធផល</button>
                             <button class="exam-tab-btn admin-only px-6 py-4 text-sm font-medium text-gray-500 hover:text-blue-600 hover:bg-white outline-none transition whitespace-nowrap" onclick="switchExamTab(event, 'exam-dashboard'); updateDashboard();"><i class="fas fa-chart-pie mr-1"></i> Dashboard</button>
                         </div>
                     </div>
@@ -589,6 +588,7 @@
                                         <i id="cloudStatusIcon" class="fas fa-cloud text-emerald-600"></i>
                                         <span id="cloudStatusText">Supabase Cloud</span>
                                     </button>
+                                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition shadow-sm hidden" id="loadMockDataBtn" onclick="loadMockData()"><i class="fas fa-database mr-1"></i> ?????????????????</button>
                                     <button class="bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition shadow-sm hidden" id="deleteAllBtn" onclick="deleteAllCandidates()"><i class="fas fa-trash-alt mr-1"></i> លុបទាំងអស់</button>
                                     <button class="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition shadow-sm hidden" id="saveCandidatesBtn" onclick="window.saveCandidates(false)"><i class="fas fa-save mr-1"></i> រក្សាទុក</button>
                                     <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition shadow-sm" onclick="addCandidate()"><i class="fas fa-plus mr-1"></i> បន្ថែមបេក្ខជន</button>
@@ -866,7 +866,7 @@
                                         <span id="scoreAutoSaveText"><span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>បានរក្សាទុកស្វ័យប្រវត្តិ</span>
                                     </div>
                                     <button class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="saveCandidates(false)"><i class="fas fa-save mr-1"></i> រក្សាទុក</button>
-                                    <button class="admin-only bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="showTop3State()"><i class="fas fa-medal mr-1"></i> លទ្ធផល</button>
+                                    <button class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="showTop3State()"><i class="fas fa-medal mr-1"></i> លទ្ធផល</button>
                                     <button class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition shadow-sm text-sm" onclick="printScoreSheet()"><i class="fas fa-print mr-1"></i> Print</button>
                                 </div>
                             </div>
@@ -891,7 +891,7 @@
                                 <!-- Center Title -->
                                 <div class="text-center mb-4 text-black font-moul mt-3">
                                     <h2 id="printTitleResult" class="text-[17px] mb-2">បញ្ជីសម្រង់ពិន្ទុបេក្ខជនប្រឡងជ្រើសរើសសិស្សពូកែ</h2>
-                                    <h3 class="text-[16px]">សម័យប្រឡង៖ <span id="scoreKhmerSolarDate">ថ្ងៃទី ២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</span></h3>
+                                    <h3 id="test1DateHeader" class="text-[16px] hidden">សម័យប្រឡង៖ <span id="scoreKhmerSolarDateCenter">ថ្ងៃទី ២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</span></h3>
                                 </div>
 
                                 <!-- Room Label & Date -->
@@ -899,6 +899,9 @@
                                     <div>
                                         <p class="text-red-600 text-lg"><span id="scoreRoomPrefix">បន្ទប់លេខ </span><span id="scoreRoomNumber">១</span></p>
                                         <p class="text-[14px] text-black">មណ្ឌលប្រឡង៖ សាលាបញ្ញាសាស្ត្រអន្តរជាតិ-សាខាទី៩</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <h3 id="outstandingDateHeader" class="text-[14px] text-black"><span id="scoreKhmerSolarDateRight">ថ្ងៃទី ២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</span></h3>
                                     </div>
                                 </div>
 
@@ -1472,7 +1475,8 @@
 
                     document.getElementById('examAllEmptyState').classList.add('hidden');
                     document.getElementById('examAllTableContainer').classList.remove('hidden');
-                    document.getElementById('deleteAllBtn').classList.remove('hidden');
+                    document.getElementById('loadMockDataBtn')?.classList.remove('hidden');
+                document.getElementById('deleteAllBtn').classList.remove('hidden');
                     document.getElementById('saveCandidatesBtn').classList.remove('hidden');
                     document.getElementById('examFileUploadStatus').classList.add('hidden');
                     fileInput.value = '';
@@ -1619,7 +1623,8 @@
             
             document.getElementById('examAllEmptyState').classList.add('hidden');
             document.getElementById('examAllTableContainer').classList.remove('hidden');
-            document.getElementById('deleteAllBtn').classList.remove('hidden');
+            document.getElementById('loadMockDataBtn')?.classList.remove('hidden');
+                document.getElementById('deleteAllBtn').classList.remove('hidden');
             document.getElementById('saveCandidatesBtn').classList.remove('hidden');
             
             recalculateAllScores();
@@ -1967,8 +1972,16 @@
             updateAutoSaveIndicator('កំពុងរក្សាទុក...');
 
             try {
-                const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
-                ensureCandidateIds(mockCandidates);
+                const saveExamKey = currentExamKey;
+                const storageKey = examConfigs[saveExamKey]?.storageKey || 'schoolExamCandidates';
+                let localCandidatesToSave = [...mockCandidates];
+                if (currentExamKey !== 'test1') {
+                    localCandidatesToSave = localCandidatesToSave.filter(c => {
+                        const subj = String(c.subject || '').trim();
+                        return !subj.includes('វិទ្យា') || (subj.includes('គណិត') || subj.includes('រូប'));
+                    });
+                }
+                ensureCandidateIds(localCandidatesToSave);
 
                 // Snapshot of dirty IDs being saved right now
                 const savingDirtyIds = new Set(window.dirtyCandidateIds || []);
@@ -1976,7 +1989,7 @@
 
                 // 1. FAST LOCAL PROTECTION: Always save current candidate state to localStorage first
                 try {
-                    localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
+                    localStorage.setItem(storageKey, JSON.stringify(localCandidatesToSave));
                     localStorage.setItem(storageKey + '_updated_at', nowIso);
                     localStorage.setItem('has_user_saved_data', 'true');
                 } catch(e) {
@@ -1984,7 +1997,7 @@
                 }
 
                 if (window.embeddedExamData) {
-                    window.embeddedExamData[storageKey] = JSON.parse(JSON.stringify(mockCandidates || []));
+                    window.embeddedExamData[storageKey] = JSON.parse(JSON.stringify(localCandidatesToSave || []));
                 }
 
                 // 2. Fetch freshest Cloud state before saving and merge to protect other users' concurrent edits
@@ -1992,13 +2005,28 @@
                 try {
                     const cloudResult = await fetchFromSupabase(storageKey, true);
                     if (cloudResult && Array.isArray(cloudResult.data) && cloudResult.data.length > 0) {
-                        mockCandidates = mergeCandidates(mockCandidates, cloudResult.data, savingDirtyIds);
+                        if (!window.isBypassingMerge) {
+                            // Only merge if not intentionally wiping or resetting to mock data
+                            let cloudDataToMerge = cloudResult.data;
+                            if (currentExamKey !== 'test1') {
+                                cloudDataToMerge = cloudDataToMerge.filter(c => {
+                                    const subj = String(c.subject || '').trim();
+                                    return !subj.includes('វិទ្យា') || (subj.includes('គណិត') || subj.includes('រូប'));
+                                });
+                            }
+                            localCandidatesToSave = mergeCandidates(localCandidatesToSave, cloudDataToMerge, savingDirtyIds);
+                        }
+                        
+                        // Only update global mockCandidates if we haven't switched exams during the await!
+                        if (currentExamKey === saveExamKey) {
+                            mockCandidates = [...localCandidatesToSave];
+                        }
                     }
                 } catch(fetchErr) {
                     console.warn('Pre-save fetch failed, proceeding with local data:', fetchErr);
                 }
 
-                const cleanData = JSON.parse(JSON.stringify(mockCandidates || []));
+                const cleanData = JSON.parse(JSON.stringify(localCandidatesToSave || []));
 
                 // 3. Update localStorage with merged dataset
                 try {
@@ -2220,7 +2248,8 @@
                 if (mockCandidates.length === 0) {
                     document.getElementById('examAllEmptyState').classList.remove('hidden');
                     document.getElementById('examAllTableContainer').classList.add('hidden');
-                    document.getElementById('deleteAllBtn').classList.add('hidden');
+                    document.getElementById('loadMockDataBtn')?.classList.remove('hidden');
+                document.getElementById('deleteAllBtn').classList.add('hidden');
                 }
             }
         }
@@ -2385,7 +2414,8 @@
             // Re-render UI
             document.getElementById('examAllEmptyState').classList.add('hidden');
             document.getElementById('examAllTableContainer').classList.remove('hidden');
-            document.getElementById('deleteAllBtn').classList.remove('hidden');
+            document.getElementById('loadMockDataBtn')?.classList.remove('hidden');
+                document.getElementById('deleteAllBtn').classList.remove('hidden');
             document.getElementById('saveCandidatesBtn').classList.remove('hidden');
 
             renderExamAllTable();
@@ -2418,13 +2448,45 @@
             openAddCandidateModal();
         }
 
+        function loadMockData() {
+            if (confirm('តើអ្នកចង់ផ្ទុកទិន្នន័យគំរូឡើងវិញមែនទេ? (ទិន្នន័យបច្ចុប្បន្ននឹងត្រូវជំនួសដោយទិន្នន័យគំរូ)')) {
+                pushHistoryState('ផ្ទុកទិន្នន័យគំរូ');
+                const storageKey = examConfigs[currentExamKey].storageKey;
+                
+                if (window.embeddedExamData && window.embeddedExamData[storageKey] && window.embeddedExamData[storageKey].length > 0) {
+                    window.isBypassingMerge = true; // prevent cloud from reverting during save
+                    mockCandidates = JSON.parse(JSON.stringify(window.embeddedExamData[storageKey]));
+                    ensureCandidateIds(mockCandidates);
+                    
+                    document.getElementById('examAllEmptyState').classList.add('hidden');
+                    document.getElementById('examAllTableContainer').classList.remove('hidden');
+                    document.getElementById('loadMockDataBtn')?.classList.remove('hidden');
+                document.getElementById('deleteAllBtn').classList.remove('hidden');
+                    document.getElementById('saveCandidatesBtn').classList.remove('hidden');
+                    
+                    saveCandidates(true).then(() => {
+                        window.isBypassingMerge = false;
+                    });
+                    resetAllUI();
+                    populateDropdowns();
+                    updateDashboard();
+                    showToast('បានផ្ទុកទិន្នន័យគំរូដោយជោគជ័យ', 'success');
+                } else {
+                    showToast('មិនមានទិន្នន័យគំរូសម្រាប់ការប្រឡងនេះទេ', 'error');
+                }
+            }
+        }
+
         function deleteAllCandidates() {
             if(confirm('តើលោកអ្នកពិតជាចង់លុបទិន្នន័យបេក្ខជនទាំងអស់ចេញពីប្រព័ន្ធមែនទេ?')) {
                 pushHistoryState('លុបទិន្នន័យទាំងអស់');
                 const storageKey = examConfigs[currentExamKey].storageKey;
 
+                window.isBypassingMerge = true;
+
                 // លាក់តារាងនិងប៊ូតុងលុប
                 document.getElementById('examAllTableContainer').classList.add('hidden');
+                document.getElementById('loadMockDataBtn')?.classList.remove('hidden');
                 document.getElementById('deleteAllBtn').classList.add('hidden');
                 document.getElementById('saveCandidatesBtn').classList.add('hidden');
                 
@@ -2434,7 +2496,9 @@
                 // លុបទិន្នន័យក្នុងតារាង
                 document.getElementById('examAllTableBody').innerHTML = '';
                 mockCandidates = [];
-                saveCandidates(true);
+                saveCandidates(true).then(() => {
+                    window.isBypassingMerge = false;
+                });
                 resetAllUI();
                 populateDropdowns();
                 updateDashboard();
@@ -2492,6 +2556,26 @@
         function renderTableForRoom(roomNumber) {
             const tbody = document.getElementById('roomTableBody');
             const filtered = mockCandidates.filter(c => c.room === roomNumber);
+            filtered.sort((a, b) => {
+                let seatA = parseInt(String(a.seat).replace(/^0+/, '')) || 0;
+                let seatB = parseInt(String(b.seat).replace(/^0+/, '')) || 0;
+                return seatA - seatB;
+            });
+            filtered.sort((a, b) => {
+                let seatA = parseInt(String(a.seat).replace(/^0+/, '')) || 0;
+                let seatB = parseInt(String(b.seat).replace(/^0+/, '')) || 0;
+                return seatA - seatB;
+            });
+            filtered.sort((a, b) => {
+                let seatA = parseInt(String(a.seat).replace(/^0+/, '')) || 0;
+                let seatB = parseInt(String(b.seat).replace(/^0+/, '')) || 0;
+                return seatA - seatB;
+            });
+            filtered.sort((a, b) => {
+                let seatA = parseInt(String(a.seat).replace(/^0+/, '')) || 0;
+                let seatB = parseInt(String(b.seat).replace(/^0+/, '')) || 0;
+                return seatA - seatB;
+            });
             
             tbody.innerHTML = '';
             
@@ -2566,12 +2650,24 @@
             const year = toKhmerNum(date.getFullYear());
             
             const dateString = `ថ្ងៃទី ${day} ខែ ${month} ឆ្នាំ ${year}`;
-            const examDateString = 'ថ្ងៃទី ៧ ខែ ធ្នូ ឆ្នាំ ២០២៦';
+            const examDateString = currentExamKey === 'test1' ? 'ថ្ងៃទី ៧ ខែ ធ្នូ ឆ្នាំ ២០២៦' : dateString;
             
-            ['khmerSolarDate', 'attendanceKhmerSolarDate', 'scoreKhmerSolarDate', 'top3KhmerSolarDateHeader'].forEach(id => {
+            ['khmerSolarDate', 'attendanceKhmerSolarDate', 'scoreKhmerSolarDateCenter', 'scoreKhmerSolarDateRight', 'top3KhmerSolarDateHeader'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.textContent = examDateString;
             });
+            
+            const test1Header = document.getElementById('test1DateHeader');
+            const outHeader = document.getElementById('outstandingDateHeader');
+            if (test1Header && outHeader) {
+                if (currentExamKey === 'test1') {
+                    test1Header.classList.remove('hidden');
+                    outHeader.classList.add('hidden');
+                } else {
+                    test1Header.classList.add('hidden');
+                    outHeader.classList.remove('hidden');
+                }
+            }
             
             ['khmerSolarDateSignature', 'attendanceKhmerSolarDateSignature', 'top3KhmerSolarDateSignature'].forEach(id => {
                 const el = document.getElementById(id);
@@ -2997,6 +3093,11 @@
 
             rooms.forEach(room => {
                 const filtered = mockCandidates.filter(c => c.room === room);
+            filtered.sort((a, b) => {
+                let seatA = parseInt(String(a.seat).replace(/^0+/, '')) || 0;
+                let seatB = parseInt(String(b.seat).replace(/^0+/, '')) || 0;
+                return seatA - seatB;
+            });
                 
                 let excelData = [
                     [examConfigs[currentExamKey].printTitleRoom],
@@ -3193,6 +3294,11 @@
         function renderScoreTableForRoom(roomNumber) {
             const tbody = document.getElementById('scoreTableBody');
             let filtered = roomNumber === 'all' ? [...mockCandidates] : mockCandidates.filter(c => c.room === roomNumber);
+            filtered.sort((a, b) => {
+                let seatA = parseInt(String(a.seat).replace(/^0+/, '')) || 0;
+                let seatB = parseInt(String(b.seat).replace(/^0+/, '')) || 0;
+                return seatA - seatB;
+            });
             
             // Sort by seat number if 'all' is selected to ensure 1 to N ordering
             if (roomNumber === 'all') {
@@ -3261,7 +3367,7 @@
                 const tr = document.createElement('tr');
                 const m = c.mention;
                 const mColor = m === 'A' ? 'text-blue-600' : m === 'B' ? 'text-green-600' : m === 'C' ? 'text-yellow-600' : m === 'D' ? 'text-orange-500' : m === 'E' ? 'text-purple-600' : m === 'F' ? 'text-red-600' : 'text-gray-800';
-                const strikeClass = (c.passed === false) ? 'failed-candidate-strike' : '';
+                const strikeClass = (currentExamKey === 'test1' && c.passed === false) ? 'failed-candidate-strike' : '';
                 tr.innerHTML = `
                     <td class="border border-black px-1 py-1.5 text-center"><span class="failed-candidate-target ${strikeClass}">${index + 1}</span></td>
                     <td class="border border-black px-1 py-1.5 text-center"><span class="failed-candidate-target ${strikeClass}">${c.seat}</span></td>
@@ -3270,21 +3376,21 @@
                     <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap"><span class="failed-candidate-target ${strikeClass}">${c.school}</span></td>
                     <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap" style="background-color: #fef08a;"><span class="failed-candidate-target ${strikeClass}">${c.subject}</span></td>
                     ${currentExamKey === 'outstanding' ? `
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="100" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="100" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
                     <td class="border border-black px-2 py-1.5 text-center whitespace-nowrap" style="background-color: #f3f4f6;">វប្បធម៌ទូទៅ</td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="100" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="100" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
                     ` : `
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[0]}" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[1]}" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="2" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[2]}" value="${c.score3 !== undefined ? c.score3 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="3" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[3]}" value="${c.score4 !== undefined ? c.score4 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="4" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[4]}" value="${c.score5 !== undefined ? c.score5 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="5" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[5]}" value="${c.score6 !== undefined ? c.score6 : ''}"></td>
-                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="6" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-normal text-gray-800" min="0" max="${maxScores[6]}" value="${c.score7 !== undefined ? c.score7 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="0" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[0]}" value="${c.score1 !== undefined ? c.score1 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="1" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[1]}" value="${c.score2 !== undefined ? c.score2 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="2" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[2]}" value="${c.score3 !== undefined ? c.score3 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="3" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[3]}" value="${c.score4 !== undefined ? c.score4 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="4" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[4]}" value="${c.score5 !== undefined ? c.score5 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #f3f4f6;"><input type="number" data-col="5" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[5]}" value="${c.score6 !== undefined ? c.score6 : ''}"></td>
+                    <td class="border border-black px-0 py-0 text-center" style="background-color: #e0f2fe;"><input type="number" data-col="6" class="score-input w-full h-full text-center bg-transparent outline-none py-1.5 font-bold text-gray-800" min="0" max="${maxScores[6]}" value="${c.score7 !== undefined ? c.score7 : ''}"></td>
                     `}
-                    <td class="border border-black px-2 py-1.5 text-center font-semibold text-blue-800">${c.total !== undefined && !isNaN(c.total) ? c.total : ''}</td>
-                    <td class="border border-black px-2 py-1.5 text-center font-semibold ${c.passed ? 'text-green-600' : (c.passed === false ? 'text-red-600' : '')}">${c.passed ? 'ជាប់' : (c.passed === false ? 'ធ្លាក់' : '')}</td>
-                    ${currentExamKey !== 'outstanding' ? `<td class="border border-black px-2 py-1.5 text-center font-semibold ${mColor}">${c.mention || ''}</td>` : ''}
+                    <td class="border border-black px-2 py-1.5 text-center font-bold text-blue-800">${c.total !== undefined && !isNaN(c.total) ? c.total : ''}</td>
+                    <td class="border border-black px-2 py-1.5 text-center font-bold ${c.passed ? 'text-green-600' : (c.passed === false ? 'text-red-600' : '')}">${c.passed ? 'ជាប់' : (c.passed === false ? 'ធ្លាក់' : '')}</td>
+                    ${currentExamKey !== 'outstanding' ? `<td class="border border-black px-2 py-1.5 text-center font-bold ${mColor}" style="font-family: 'Times New Roman', Times, serif;">${c.mention || ''}</td>` : ''}
                 `;
                 tbody.appendChild(tr);
             });
@@ -3594,9 +3700,16 @@
             
             let filteredCandidates = mockCandidates;
             
-            // Filter by subject if provided and not empty (IGNORE subject filter for test1)
-            if (currentExamKey !== 'test1' && subject && subject !== 'all') {
-                filteredCandidates = filteredCandidates.filter(c => String(c.subject || '').trim() === subject);
+            if (currentExamKey === 'test1') {
+                // test1 doesn't filter by subject or room in the same way, nor does it require pass
+            } else {
+                // For outstanding, ONLY passed candidates are eligible for Top 3
+                filteredCandidates = filteredCandidates.filter(c => c.passed === true);
+                
+                // Filter by subject if provided and not empty
+                if (subject && subject !== 'all') {
+                    filteredCandidates = filteredCandidates.filter(c => String(c.subject || '').trim() === subject);
+                }
             }
             
             // Filter by room if not 'all'
@@ -3640,7 +3753,13 @@
                         }
                     }
                     
-                    finalResults.push({ candidate: c, rank: score !== null ? currentRank : '-' });
+                    if (currentExamKey === 'test1') {
+                        finalResults.push({ candidate: c, rank: score !== null ? currentRank : '-' });
+                    } else {
+                        if (score !== null && currentRank <= 3) {
+                            finalResults.push({ candidate: c, rank: currentRank });
+                        }
+                    }
                 }
             });
 
@@ -3681,32 +3800,27 @@
             
             const theadTr = document.getElementById('top3TableHeaderRow');
             if (theadTr) {
+                const fontClass = currentExamKey === 'test1' ? 'text-[12px] font-normal' : 'text-[12px]';
+                
                 let ths = `
-                    <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ល.រ</th>
-                    <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">លេខតុ</th>
-                    <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">គោត្តនាម-នាម</th>
-                    <th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">ភេទ</th>
+                    <th class="border border-black px-1.5 py-1.5 ${fontClass} font-moul">ល.រ</th>
+                    <th class="border border-black px-1.5 py-1.5 ${fontClass} font-moul">លេខតុ</th>
+                    <th class="border border-black px-2 py-1.5 ${fontClass} font-moul">គោត្តនាម-នាម</th>
+                    <th class="border border-black px-1.5 py-1.5 ${fontClass} font-moul">ភេទ</th>
                 `;
-                
-                if (currentExamKey !== 'test1') {
-                    ths += `<th class="border border-black px-1.5 py-1.5 text-[12px] font-normal font-moul">បន្ទប់</th>`;
-                }
-                
-                ths += `
-                    <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ឯកទេស</th>
-                    <th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">សាខា</th>
-                `;
-                
-                if (currentExamKey !== 'test1') {
-                    ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ពិន្ទុ</th>`;
-                }
-                
-                ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">លទ្ធផល</th>`;
                 
                 if (currentExamKey === 'test1') {
-                    ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">និទ្ទេស</th>`;
+                    ths += `<th class="border border-black px-1.5 py-1.5 ${fontClass} font-moul">បន្ទប់</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">ឯកទេស</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">សាខា</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">ពិន្ទុ</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">លទ្ធផល</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">និទ្ទេស</th>`;
                 } else {
-                    ths += `<th class="border border-black px-2 py-1.5 text-[12px] font-normal font-moul">ចំណាត់ថ្នាក់</th>`;
+                    ths += `<th class="border border-black px-1.5 py-1.5 ${fontClass} font-moul">ថ្នាក់</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">ឯកទេស</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">សាខា</th>`;
+                    ths += `<th class="border border-black px-2 py-1.5 ${fontClass} font-moul">ចំណាត់ថ្នាក់</th>`;
                 }
                 theadTr.innerHTML = ths;
             }
@@ -3717,7 +3831,7 @@
 
             tbody.innerHTML = '';
             if (finalResults.length === 0) {
-                const colSpan = currentExamKey === 'test1' ? 8 : 10;
+                const colSpan = currentExamKey === 'test1' ? 10 : 8;
                 tbody.innerHTML = `<tr><td colspan="${colSpan}" class="border border-black px-1 py-6 text-center text-gray-500" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">មិនទាន់មានទិន្នន័យទេ</td></tr>`;
                 const totalEl = document.getElementById('top3TotalCandidates');
                 if (totalEl) totalEl.textContent = toKhmerNum(0);
@@ -3754,7 +3868,7 @@
                 let resultColor = '';
                 if (c.passed === true) {
                     resultStr = 'ជាប់';
-                    resultColor = 'text-black';
+                    resultColor = currentExamKey === 'test1' ? 'text-black' : 'text-green-600';
                 } else if (c.passed === false) {
                     resultStr = 'ធ្លាក់';
                     resultColor = 'text-red-600';
@@ -3766,12 +3880,14 @@
                 let seatStr = toKhmerNum(c.seat);
                 
                 let isFail = false;
-                if (c.passed === true) {
-                    // Circle ID and Seat
-                    idStr = `<span class="inline-block border border-red-600 rounded-full px-1.5 leading-tight">${idStr}</span>`;
-                    seatStr = `<span class="inline-block border border-red-600 rounded-full px-1.5 leading-tight">${seatStr}</span>`;
-                } else if (c.passed === false) {
-                    isFail = true;
+                if (currentExamKey === 'test1') {
+                    if (c.passed === true) {
+                        // Circle ID and Seat
+                        idStr = `<span class="inline-block border border-red-600 rounded-full px-1.5 leading-tight">${idStr}</span>`;
+                        seatStr = `<span class="inline-block border border-red-600 rounded-full px-1.5 leading-tight">${seatStr}</span>`;
+                    } else if (c.passed === false) {
+                        isFail = true;
+                    }
                 }
                 
                 let tds = `
@@ -3781,24 +3897,17 @@
                     <td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${(c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'}</td>
                 `;
                 
-                if (currentExamKey !== 'test1') {
-                    tds += `<td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.room || '')}</td>`;
-                }
-                
-                tds += `
-                    <td class="border border-black px-2 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.subject}</td>
-                    <td class="border border-black px-2 py-1 text-center whitespace-nowrap font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.school}</td>
-                `;
-                
-                if (currentExamKey !== 'test1') {
-                    tds += `<td class="border border-black px-2 py-1 text-center font-semibold text-blue-800 text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${scoreStr}</td>`;
-                }
-                
-                tds += `<td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${resultStr}</td>`;
-                
                 if (currentExamKey === 'test1') {
+                    tds += `<td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.room || '')}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.subject}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center whitespace-nowrap font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.school}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center font-semibold text-blue-800 text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${scoreStr}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center ${resultColor} font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${resultStr}</td>`;
                     tds += `<td class="border border-black px-2 py-1 text-center text-[14px]" style="color: ${gradeColor}; font-family: 'Times New Roman', Times, serif; font-weight: bold !important; z-index: 20; position: relative; background-color: transparent;">${gradeStr}</td>`;
                 } else {
+                    tds += `<td class="border border-black px-1.5 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${toKhmerNum(c.room || '')}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.subject}</td>`;
+                    tds += `<td class="border border-black px-2 py-1 text-center whitespace-nowrap font-normal text-[12px]" style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 12px;">${c.school}</td>`;
                     tds += `<td class="border border-black px-2 py-1 text-center text-gray-800 font-moul text-[12px] font-normal" style="z-index: 20; position: relative; background-color: transparent;">${rankStr}</td>`;
                 }
 
@@ -3835,12 +3944,11 @@
             let roomString = room !== 'all' ? `បន្ទប់លេខ ${room}` : 'គ្រប់បន្ទប់';
 
             let headers = ['ល.រ', 'លេខតុ', 'គោត្តនាម-នាម', 'ភេទ'];
-            if (currentExamKey !== 'test1') headers.push('បន្ទប់');
-            headers.push('ឯកទេស', 'សាខា');
-            if (currentExamKey !== 'test1') headers.push('ពិន្ទុ');
-            headers.push('លទ្ធផល');
-            if (currentExamKey === 'test1') headers.push('និទ្ទេស');
-            else headers.push('ចំណាត់ថ្នាក់');
+            if (currentExamKey === 'test1') {
+                headers.push('បន្ទប់', 'ឯកទេស', 'សាខា', 'ពិន្ទុ', 'លទ្ធផល', 'និទ្ទេស');
+            } else {
+                headers.push('ថ្នាក់', 'ឯកទេស', 'សាខា', 'ចំណាត់ថ្នាក់');
+            }
 
             let excelData = [
                 ['ព្រះរាជាណាចក្រកម្ពុជា'],
@@ -3883,13 +3991,23 @@
                     (c.gender === 'F' || c.gender === 'ស្រី') ? 'ស្រី' : 'ប្រុស'
                 ];
                 
-                if (currentExamKey !== 'test1') rowData.push(toKhmerNum(c.room || ''));
-                rowData.push(c.subject || '', c.school || '');
-                if (currentExamKey !== 'test1') rowData.push(scoreStr);
-                rowData.push(resultStr);
-                
-                if (currentExamKey === 'test1') rowData.push(gradeStr);
-                else rowData.push(rankStr);
+                if (currentExamKey === 'test1') {
+                    rowData.push(
+                        toKhmerNum(c.room || ''),
+                        c.subject || '',
+                        c.school || '',
+                        scoreStr,
+                        resultStr,
+                        gradeStr
+                    );
+                } else {
+                    rowData.push(
+                        toKhmerNum(c.room || ''),
+                        c.subject || '',
+                        c.school || '',
+                        rankStr
+                    );
+                }
                 
                 excelData.push(rowData);
             });
@@ -4177,7 +4295,8 @@
             document.getElementById('examAllTableBody').innerHTML = '';
             document.getElementById('examAllEmptyState').classList.remove('hidden');
             document.getElementById('examAllTableContainer').classList.add('hidden');
-            document.getElementById('deleteAllBtn').classList.add('hidden');
+            document.getElementById('loadMockDataBtn')?.classList.remove('hidden');
+                document.getElementById('deleteAllBtn').classList.add('hidden');
             document.getElementById('saveCandidatesBtn').classList.add('hidden');
             const autoSaveInd = document.getElementById('autoSaveIndicator');
             if (autoSaveInd) {
@@ -4233,6 +4352,12 @@
 
         function applyCandidatesData(parsedData) {
             if (!parsedData || !Array.isArray(parsedData) || parsedData.length === 0) return false;
+            if (currentExamKey !== 'test1') {
+                parsedData = parsedData.filter(c => {
+                    const subj = String(c.subject || '').trim();
+                    return !subj.includes('វិទ្យា') || (subj.includes('គណិត') || subj.includes('រូប'));
+                });
+            }
             
             mockCandidates = parsedData;
             ensureCandidateIds(mockCandidates);
