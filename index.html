@@ -2610,7 +2610,7 @@
                     <td class="border border-black px-1 py-1 text-center">${c.gender === 'F' ? 'ស្រី' : 'ប្រុស'}</td>
                     <td class="border border-black px-1 py-1 text-center">${toKhmerNum(extractGradeNumber(c.grade))}</td>
                     <td class="border border-black px-2 py-1 text-center">${c.school}</td>
-                    <td class="border border-black px-1 py-1 text-center">${c.subject ? c.subject.replace("វិទ្យាសាស្ត្រ", "វិទ្យាសាស្ត្រ<br>").replace("វិទ្យាសាស្រ្ត", "វិទ្យាសាស្រ្ត<br>") : ""}</td>
+                    <td class="border border-black px-2 py-1 text-center whitespace-nowrap">${c.subject}</td>
                 `;
                 tbody.appendChild(tr);
             });
