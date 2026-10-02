@@ -2958,7 +2958,10 @@
                 return;
             }
             const resultsTab = document.getElementById('exam-results');
+            const attendanceTab = document.getElementById('exam-attendance');
             if (resultsTab && !resultsTab.classList.contains('hidden')) {
+                setPrintOrientation('landscape');
+            } else if (attendanceTab && !attendanceTab.classList.contains('hidden')) {
                 setPrintOrientation('landscape');
             } else {
                 setPrintOrientation('portrait');
@@ -3019,6 +3022,7 @@
                     if (printRoomEl) printRoomEl.textContent = curRoom;
                     renderTableForRoom(curRoom);
                 } else if (tabId === 'exam-attendance') {
+                    setPrintOrientation('landscape');
                     const aEmpty = document.getElementById('attendanceEmptyState');
                     if (aEmpty) aEmpty.classList.add('hidden');
                     const aGen = document.getElementById('attendanceGeneratedData');
@@ -4790,11 +4794,14 @@
             // Ctrl+P: Print
             else if (key === 'p') {
                 const resultsTab = document.getElementById('exam-results');
-                if (resultsTab && !resultsTab.classList.contains('hidden')) {
-                    setPrintOrientation('landscape');
-                } else {
-                    setPrintOrientation('portrait');
-                }
+            const attendanceTab = document.getElementById('exam-attendance');
+            if (resultsTab && !resultsTab.classList.contains('hidden')) {
+                setPrintOrientation('landscape');
+            } else if (attendanceTab && !attendanceTab.classList.contains('hidden')) {
+                setPrintOrientation('landscape');
+            } else {
+                setPrintOrientation('portrait');
+            }
             }
         });
     
