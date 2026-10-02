@@ -26,7 +26,7 @@
         .fail-row td::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; border-top: 1.5px solid #dc2626; z-index: 10; pointer-events: none; }
         @media print {
             @page {
-                size: A4 portrait;
+                /* size: A4 portrait; */
                 margin: 5mm; /* Very small margin */
             }
             @page landscape {
@@ -70,6 +70,7 @@
                 padding: 0 !important;
                 max-width: 100% !important;
                 width: 100% !important;
+                overflow: visible !important;
                 page-break-after: avoid;
                 page-break-before: avoid;
                 page-break-inside: avoid;
@@ -81,6 +82,7 @@
                 max-width: 100% !important;
                 padding: 0 !important;
                 margin: 0 auto !important;
+                overflow: visible !important;
             }
             #scorePrintablePaper .pt-12 {
                 padding-top: 1rem !important;
@@ -889,6 +891,7 @@
                                 <!-- Center Title -->
                                 <div class="text-center mb-4 text-black font-moul mt-3">
                                     <h2 id="printTitleResult" class="text-[17px] mb-2">បញ្ជីសម្រង់ពិន្ទុបេក្ខជនប្រឡងជ្រើសរើសសិស្សពូកែ</h2>
+                                    <h3 class="text-[16px]">សម័យប្រឡង៖ <span id="scoreKhmerSolarDate">ថ្ងៃទី ២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</span></h3>
                                 </div>
 
                                 <!-- Room Label & Date -->
@@ -896,9 +899,6 @@
                                     <div>
                                         <p class="text-red-600 text-lg"><span id="scoreRoomPrefix">បន្ទប់លេខ </span><span id="scoreRoomNumber">១</span></p>
                                         <p class="text-[14px] text-black">មណ្ឌលប្រឡង៖ សាលាបញ្ញាសាស្ត្រអន្តរជាតិ-សាខាទី៩</p>
-                                    </div>
-                                    <div class="text-right pb-1">
-                                        <h3 class="text-[15px] text-black">សម័យប្រឡង៖ <span id="scoreKhmerSolarDate">ថ្ងៃទី ២១ ខែ កញ្ញា ឆ្នាំ ២០២៦</span></h3>
                                     </div>
                                 </div>
 
