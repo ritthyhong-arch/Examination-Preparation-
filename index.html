@@ -293,7 +293,14 @@
         body.role-user .admin-only {
             display: none !important;
         }
-    </style>
+        @media print {
+        #attendanceTableBody td, #attendanceTableBody th, #exam-attendance table th {
+            font-size: 10px !important;
+            padding-left: 2px !important;
+            padding-right: 2px !important;
+        }
+    }
+</style>
     <style id="dynamicPrintOrientation">
         @page { size: A4 landscape !important; margin: 5mm !important; }
     </style>
@@ -2599,7 +2606,7 @@
                     <td class="border border-black px-1 py-1 text-center">${c.gender === 'F' ? 'ស្រី' : 'ប្រុស'}</td>
                     <td class="border border-black px-1 py-1 text-center">${toKhmerNum(extractGradeNumber(c.grade))}</td>
                     <td class="border border-black px-2 py-1 text-center">${c.school}</td>
-                    <td class="border border-black px-2 py-1 text-center whitespace-nowrap">${c.subject}</td>
+                    <td class="border border-black px-1 py-1 text-center">${c.subject ? c.subject.replace("វិទ្យាសាស្ត្រ", "វិទ្យាសាស្ត្រ<br>").replace("វិទ្យាសាស្រ្ត", "វិទ្យាសាស្រ្ត<br>") : ""}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -2962,7 +2969,7 @@
             if (resultsTab && !resultsTab.classList.contains('hidden')) {
                 setPrintOrientation('landscape');
             } else if (attendanceTab && !attendanceTab.classList.contains('hidden')) {
-                setPrintOrientation('landscape');
+                setPrintOrientation('portrait');
             } else {
                 setPrintOrientation('portrait');
             }
@@ -3186,20 +3193,20 @@
                     document.getElementById('th-att-s6').style.display = 'none';
                     document.getElementById('th-att-s7').style.display = 'none';
                 } else {
-                    document.getElementById('th-att-s1').textContent = 'គណិតវិទ្យា';
+                    document.getElementById('th-att-s1').innerHTML = 'គណិត<br>វិទ្យា';
                     document.getElementById('th-att-s2').textContent = 'អក្សរសាស្រ្តខ្មែរ';
-                    document.getElementById('th-att-s3').textContent = 'ប្រវត្តិវិទ្យា';
+                    document.getElementById('th-att-s3').innerHTML = 'ប្រវត្តិ<br>វិទ្យា';
                     document.getElementById('th-att-s3').style.display = '';
                     if (isSocial) {
-                        document.getElementById('th-att-s4').textContent = 'ភូមិវិទ្យា';
+                        document.getElementById('th-att-s4').innerHTML = 'ភូមិ<br>វិទ្យា';
                         document.getElementById('th-att-s5').textContent = 'ពលរដ្ឋវិជ្ជា';
-                        document.getElementById('th-att-s6').textContent = 'ផែនដីវិទ្យា';
+                        document.getElementById('th-att-s6').innerHTML = 'ផែនដី<br>វិទ្យា';
                     } else {
-                        document.getElementById('th-att-s4').textContent = 'គីមីវិទ្យា';
-                        document.getElementById('th-att-s5').textContent = 'រូបវិទ្យា';
-                        document.getElementById('th-att-s6').textContent = 'ជីវវិទ្យា';
+                        document.getElementById('th-att-s4').innerHTML = 'គីមី<br>វិទ្យា';
+                        document.getElementById('th-att-s5').innerHTML = 'រូប<br>វិទ្យា';
+                        document.getElementById('th-att-s6').innerHTML = 'ជីវ<br>វិទ្យា';
                     }
-                    document.getElementById('th-att-s7').textContent = 'ភាសាបរទេស';
+                    document.getElementById('th-att-s7').innerHTML = 'ភាសា<br>បរទេស';
                     document.getElementById('th-att-s4').style.display = '';
                     document.getElementById('th-att-s5').style.display = '';
                     document.getElementById('th-att-s6').style.display = '';
@@ -4798,7 +4805,7 @@
             if (resultsTab && !resultsTab.classList.contains('hidden')) {
                 setPrintOrientation('landscape');
             } else if (attendanceTab && !attendanceTab.classList.contains('hidden')) {
-                setPrintOrientation('landscape');
+                setPrintOrientation('portrait');
             } else {
                 setPrintOrientation('portrait');
             }
