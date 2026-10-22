@@ -1802,7 +1802,32 @@
             });
         }
 
+        
+        function filterValidOutstandingCandidates(list) {
+            if (!Array.isArray(list)) return [];
+            let filtered = list.filter(c => {
+                if (!c) return false;
+                const s = String(c.subject || '') + ' ' + String(c.major || '') + ' ' + String(c.track || '');
+                if (s.includes('ពិត') || s.includes('សង្គម')) {
+                    return false;
+                }
+                return true;
+            });
+            const seenSeats = new Set();
+            filtered = filtered.filter(c => {
+                const seat = String(c.seat || '').trim();
+                if (seat && seenSeats.has(seat)) {
+                    return false;
+                }
+                if (seat) seenSeats.add(seat);
+                return true;
+            });
+            return filtered;
+        }
+
         function mergeCandidates(localList, cloudList, dirtyIds = new Set()) {
+            localList = filterValidOutstandingCandidates(localList);
+            cloudList = filterValidOutstandingCandidates(cloudList);
             if (!Array.isArray(cloudList) || cloudList.length === 0) return localList || [];
             if (!Array.isArray(localList) || localList.length === 0) return cloudList || [];
 
@@ -4035,8 +4060,20 @@
         function applyCandidatesData(parsedData) {
             if (!parsedData || !Array.isArray(parsedData) || parsedData.length === 0) return false;
             
+            const originalCount = parsedData.length;
+            parsedData = filterValidOutstandingCandidates(parsedData);
+            if (parsedData.length === 0) return false;
+
             mockCandidates = parsedData;
             ensureCandidateIds(mockCandidates);
+
+            if (parsedData.length !== originalCount) {
+                try {
+                    const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
+                    localStorage.setItem(storageKey, JSON.stringify(mockCandidates));
+                    localStorage.setItem(storageKey + '_updated_at', new Date().toISOString());
+                } catch(e) {}
+            }
             
             // Auto assign rooms silently if missing or incomplete
             let needsRoomGen = mockCandidates.some(c => !c.room || c.room === 'ថ្មី' || c.room === '0');
@@ -4338,6 +4375,16 @@
                 localStorage.removeItem('schoolExamCandidates_test1');
                 localStorage.removeItem('schoolExamCandidates_test1_updated_at');
                 localStorage.setItem('school_active_exam_key', 'outstanding');
+
+                const localStr = localStorage.getItem('schoolExamCandidates');
+                if (localStr) {
+                    const parsed = JSON.parse(localStr);
+                    const cleaned = filterValidOutstandingCandidates(parsed);
+                    if (cleaned.length !== parsed.length) {
+                        localStorage.setItem('schoolExamCandidates', JSON.stringify(cleaned));
+                        localStorage.setItem('schoolExamCandidates_updated_at', new Date().toISOString());
+                    }
+                }
             } catch(e) {}
             // Restore last active exam
             const savedExam = 'outstanding';
