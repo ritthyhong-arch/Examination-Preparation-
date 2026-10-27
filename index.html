@@ -1450,6 +1450,32 @@
             return parseInt(res) || 0;
         }
 
+        function parseSeatNumber(seat) {
+            if (seat === null || seat === undefined) return 999999;
+            const str = String(seat);
+            let res = '';
+            for (let char of str) {
+                let idx = khmerNumbers.indexOf(char);
+                if (idx !== -1) {
+                    res += idx;
+                } else if (char >= '0' && char <= '9') {
+                    res += char;
+                }
+            }
+            const num = parseInt(res, 10);
+            return isNaN(num) ? 999999 : num;
+        }
+
+        function sortCandidatesBySeat(list) {
+            if (!Array.isArray(list)) return list;
+            return list.sort((a, b) => {
+                const sA = parseSeatNumber(a?.seat);
+                const sB = parseSeatNumber(b?.seat);
+                if (sA !== sB) return sA - sB;
+                return String(a?.name || '').localeCompare(String(b?.name || ''), 'km');
+            });
+        }
+
         const sidebar = document.getElementById('sidebar');
         const openSidebarBtn = document.getElementById('openSidebar');
         const closeSidebarBtn = document.getElementById('closeSidebar');
@@ -1705,6 +1731,7 @@
         function renderExamAllTable() {
             const tbody = document.getElementById('examAllTableBody');
             tbody.innerHTML = '';
+            sortCandidatesBySeat(mockCandidates);
             
             mockCandidates.forEach((c) => {
                 const tr = document.createElement('tr');
@@ -2129,6 +2156,7 @@
                 }
             });
 
+            sortCandidatesBySeat(merged);
             return merged;
         }
 
@@ -2195,6 +2223,7 @@
 
             try {
                 const storageKey = examConfigs[currentExamKey]?.storageKey || 'schoolExamCandidates';
+                sortCandidatesBySeat(mockCandidates);
                 ensureCandidateIds(mockCandidates);
 
                 // Snapshot of dirty IDs being saved right now
@@ -2708,6 +2737,7 @@
         function renderTableForRoom(roomNumber) {
             const tbody = document.getElementById('roomTableBody');
             const filtered = mockCandidates.filter(c => c.room === roomNumber);
+            sortCandidatesBySeat(filtered);
             
             tbody.innerHTML = '';
             
@@ -3010,6 +3040,9 @@
             if (!mockCandidates || mockCandidates.length === 0) return;
             
             mockCandidates.sort((a, b) => {
+                let sA = parseSeatNumber(a?.seat);
+                let sB = parseSeatNumber(b?.seat);
+                if (sA < 999990 && sB < 999990 && sA !== sB) return sA - sB;
                 let gradeA = extractGradeNumber(a.grade);
                 let gradeB = extractGradeNumber(b.grade);
                 if (gradeA !== gradeB) return gradeA - gradeB;
@@ -3211,6 +3244,7 @@
 
             rooms.forEach(room => {
                 const filtered = mockCandidates.filter(c => c.room === room);
+                sortCandidatesBySeat(filtered);
                 
                 let excelData = [
                     [examConfigs[currentExamKey].printTitleRoom],
@@ -3267,6 +3301,7 @@
         function renderAttendanceForRoom(roomNumber) {
             const tbody = document.getElementById('attendanceTableBody');
             const filtered = mockCandidates.filter(c => c.room === roomNumber);
+            sortCandidatesBySeat(filtered);
             
             tbody.innerHTML = '';
             
@@ -3407,15 +3442,7 @@
         function renderScoreTableForRoom(roomNumber) {
             const tbody = document.getElementById('scoreTableBody');
             let filtered = roomNumber === 'all' ? [...mockCandidates] : mockCandidates.filter(c => c.room === roomNumber);
-            
-            // Sort by seat number if 'all' is selected to ensure 1 to N ordering
-            if (roomNumber === 'all') {
-                filtered.sort((a, b) => {
-                    const seatA = parseInt(String(a.seat).replace(/\D/g, ''), 10) || 0;
-                    const seatB = parseInt(String(b.seat).replace(/\D/g, ''), 10) || 0;
-                    return seatA - seatB;
-                });
-            }
+            sortCandidatesBySeat(filtered);
             
             tbody.innerHTML = '';
             
@@ -4286,7 +4313,7 @@
             parsedData = filterValidOutstandingCandidates(parsedData);
             if (parsedData.length === 0) return false;
 
-            mockCandidates = parsedData;
+            mockCandidates = sortCandidatesBySeat(parsedData);
             ensureCandidateIds(mockCandidates);
 
             if (parsedData.length !== originalCount) {
@@ -4681,6 +4708,9 @@
             }
 
             mockCandidates.sort((a, b) => {
+                let sA = parseSeatNumber(a?.seat);
+                let sB = parseSeatNumber(b?.seat);
+                if (sA < 999990 && sB < 999990 && sA !== sB) return sA - sB;
                 let gradeA = extractGradeNumber(a.grade);
                 let gradeB = extractGradeNumber(b.grade);
                 if (gradeA !== gradeB) return gradeA - gradeB;
