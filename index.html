@@ -25,7 +25,7 @@
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 5mm; /* Very small margin */
+                margin: 8mm 12mm 8mm 12mm; /* Balanced side margins (គែមសងខាង ១២mm) */
             }
             @page landscape {
                 size: A4 landscape;
@@ -33,7 +33,7 @@
             }
             @page portrait {
                 size: A4 portrait;
-                margin: 5mm;
+                margin: 8mm 12mm 8mm 12mm; /* Balanced side margins (គែមសងខាង ១២mm) */
             }
             .page-landscape {
                 page: landscape;
@@ -3083,8 +3083,10 @@
             }
             if (orientation === 'landscape') {
                 styleEl.innerHTML = `@page { size: A4 landscape !important; margin: 5mm !important; }`;
-            } else {
+            } else if (orientation === 'top3') {
                 styleEl.innerHTML = `@page { size: A4 portrait !important; margin: 0 !important; }`;
+            } else {
+                styleEl.innerHTML = `@page { size: A4 portrait !important; margin: 8mm 12mm 8mm 12mm !important; }`;
             }
         }
 
@@ -3096,7 +3098,7 @@
         }
 
         function printTop3() {
-            setPrintOrientation('portrait');
+            setPrintOrientation('top3');
             setTimeout(() => {
                 window.print();
             }, 60);
@@ -3105,7 +3107,7 @@
         window.addEventListener('beforeprint', () => {
             const top3State = document.getElementById('resultTop3State');
             if (top3State && !top3State.classList.contains('hidden')) {
-                setPrintOrientation('portrait');
+                setPrintOrientation('top3');
                 return;
             }
             const resultsTab = document.getElementById('exam-results');
